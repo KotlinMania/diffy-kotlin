@@ -17,3 +17,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "diffy-kotlin"
+
