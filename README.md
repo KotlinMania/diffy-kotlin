@@ -41,7 +41,7 @@ license](https://github.com/bmwill/diffy/blob/HEAD/LICENSE-APACHE) or the [MIT l
 
 ```kotlin
 dependencies {
-    implementation("io.github.kotlinmania:diffy-kotlin:0.1.0-SNAPSHOT")
+    implementation("io.github.kotlinmania:diffy-kotlin:0.1.0")
 }
 ```
 
