@@ -259,9 +259,9 @@ internal fun fmtEscapedByte(out: Appendable, b: Byte) {
             val unsigned = b.toInt() and 0xFF
             if (unsigned < 0x20 || unsigned == 0x7f) {
                 out.append("\\")
-                out.append('0' + (unsigned shr 6))
-                out.append('0' + ((unsigned shr 3) and 7))
-                out.append('0' + (unsigned and 7))
+                out.append(('0'.code + (unsigned shr 6)).toChar())
+                out.append(('0'.code + ((unsigned shr 3) and 7)).toChar())
+                out.append(('0'.code + (unsigned and 7)).toChar())
             } else {
                 out.append(b.toInt().toChar())
             }
