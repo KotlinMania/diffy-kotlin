@@ -263,7 +263,7 @@ internal fun fmtEscapedByte(out: Appendable, b: Byte) {
                 out.append(('0'.code + ((unsigned shr 3) and 7)).toChar())
                 out.append(('0'.code + (unsigned and 7)).toChar())
             } else {
-                out.append(b.toInt().toChar())
+                out.append((b.toInt() and 0xFF).toChar())
             }
         }
     }

@@ -359,8 +359,3 @@ private fun buildEditScript(solution: List<DiffRange<*>>): List<EditRange> {
     return editScript
 }
 
-// Minimal cleanup implementation
-private fun <T> compact(diffs: MutableList<DiffRange<T>>) {
-    // TODO: Implement full cleanup algorithm from cleanup.rs
-    // For now, this is a no-op placeholder
-}
