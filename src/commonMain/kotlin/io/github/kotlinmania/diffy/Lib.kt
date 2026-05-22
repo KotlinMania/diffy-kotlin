@@ -51,6 +51,9 @@ typealias ParsePatchErrorKind = io.github.kotlinmania.diffy.patch.ParsePatchErro
 
 typealias DiffOptions = io.github.kotlinmania.diffy.diff.DiffOptions
 
-// Re-export public functions
-val createPatch: (String, String) -> Patch<String> = io.github.kotlinmania.diffy.diff::createPatch
-val createPatchBytes: (ByteArray, ByteArray) -> Patch<ByteArray> = io.github.kotlinmania.diffy.diff::createPatchBytes
+// Re-export public functions as top-level functions
+fun createPatch(original: String, modified: String): Patch<String> =
+    io.github.kotlinmania.diffy.diff.createPatch(original, modified)
+
+fun createPatchBytes(original: ByteArray, modified: ByteArray): Patch<ByteArray> =
+    io.github.kotlinmania.diffy.diff.createPatchBytes(original, modified)

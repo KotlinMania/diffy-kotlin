@@ -4,6 +4,7 @@ package io.github.kotlinmania.diffy.patch
 /**
  * An error returned when parsing a [Patch] using [Patch.fromStr] fails.
  */
+@ConsistentCopyVisibility
 data class ParsePatchError internal constructor(
     internal val kind: ParsePatchErrorKind,
     val span: IntRange? = null,

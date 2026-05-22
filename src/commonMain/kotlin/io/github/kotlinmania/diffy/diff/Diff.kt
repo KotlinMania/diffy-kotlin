@@ -106,17 +106,17 @@ class DiffOptions {
         )
     }
 
-    internal fun <T : Comparable<T>> diffSlice(old: List<T>, new: List<T>): List<DiffRange<T>> {
-        // Convert lists to arrays for myers algorithm
-        val oldArray = old.toTypedArray()
-        val newArray = new.toTypedArray()
-
+    internal fun <T : Comparable<T>> diffSlice(old: List<T>, new: List<T>): List<DiffRange<List<T>>> {
         // Use myers diff on the comparable IDs
-        val oldRange = Range.new(ComparableSliceLike<T>(), oldArray, RangeFull)
-        val newRange = Range.new(ComparableSliceLike<T>(), newArray, RangeFull)
+        // Create wrapper arrays to work with the array-based SliceLike
+        val oldListWrapper = old
+        val newListWrapper = new
 
-        val solution = mutableListOf<DiffRange<Array<T>>>()
-        val maxD = io.github.kotlinmania.diffy.diff.maxD(oldArray.size, newArray.size)
+        val oldRange = Range.new(ListSliceLike<T>(), oldListWrapper, RangeFull)
+        val newRange = Range.new(ListSliceLike<T>(), newListWrapper, RangeFull)
+
+        val solution = mutableListOf<DiffRange<List<T>>>()
+        val maxD = io.github.kotlinmania.diffy.diff.maxD(old.size, new.size)
         val vf = io.github.kotlinmania.diffy.diff.V(maxD)
         val vb = io.github.kotlinmania.diffy.diff.V(maxD)
 
@@ -126,79 +126,11 @@ class DiffOptions {
             compact(solution)
         }
 
-        // Convert DiffRange<Array<T>> to DiffRange<T> by mapping the ranges
-        return solution.map { diffRange ->
-            when (diffRange) {
-                is DiffRange.Equal -> {
-                    val leftList = diffRange.left.asSlice().toList()
-                    val rightList = diffRange.right.asSlice().toList()
-                    DiffRange.Equal(
-                        Range.new(ListSliceLike(), leftList, RangeFull),
-                        Range.new(ListSliceLike(), rightList, RangeFull)
-                    )
-                }
-                is DiffRange.Delete -> {
-                    val list = diffRange.range.asSlice().toList()
-                    DiffRange.Delete(Range.new(ListSliceLike(), list, RangeFull))
-                }
-                is DiffRange.Insert -> {
-                    val list = diffRange.range.asSlice().toList()
-                    DiffRange.Insert(Range.new(ListSliceLike(), list, RangeFull))
-                }
-            }
-        }
+        return solution
     }
 }
 
-// SliceLike implementation for Array<T> where T is Comparable
-private class ComparableSliceLike<T : Comparable<T>> : io.github.kotlinmania.diffy.SliceLike<Array<T>> {
-    override fun len(value: Array<T>): Int = value.size
-    override fun empty(): Array<T> = emptyArray()
-    override fun asSlice(value: Array<T>, start: Int, endExclusive: Int): Array<T> =
-        value.sliceArray(start until endExclusive)
-
-    override fun commonPrefixLen(a: Array<T>, b: Array<T>): Int {
-        val limit = min(a.size, b.size)
-        var i = 0
-        while (i < limit && a[i] == b[i]) i++
-        return i
-    }
-
-    override fun commonSuffixLen(a: Array<T>, b: Array<T>): Int {
-        val limit = min(a.size, b.size)
-        var i = 0
-        while (i < limit && a[a.size - 1 - i] == b[b.size - 1 - i]) i++
-        return i
-    }
-
-    override fun commonOverlapLen(a: Array<T>, b: Array<T>): Int {
-        var len = min(a.size, b.size)
-        while (len > 0) {
-            if (a.sliceArray(0 until len).contentEquals(b.sliceArray(b.size - len until b.size))) break
-            len -= 1
-        }
-        return len
-    }
-
-    override fun startsWith(value: Array<T>, prefix: Array<T>): Boolean {
-        if (prefix.size > value.size) return false
-        for (i in prefix.indices) {
-            if (value[i] != prefix[i]) return false
-        }
-        return true
-    }
-
-    override fun endsWith(value: Array<T>, suffix: Array<T>): Boolean {
-        if (suffix.size > value.size) return false
-        val base = value.size - suffix.size
-        for (i in suffix.indices) {
-            if (value[base + i] != suffix[i]) return false
-        }
-        return true
-    }
-}
-
-// SliceLike implementation for List<T>
+// SliceLike implementation for List<T> where items are comparable
 private class ListSliceLike<T> : io.github.kotlinmania.diffy.SliceLike<List<T>> {
     override fun len(value: List<T>): Int = value.size
     override fun empty(): List<T> = emptyList()
