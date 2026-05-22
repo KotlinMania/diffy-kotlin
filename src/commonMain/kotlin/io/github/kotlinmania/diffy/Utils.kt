@@ -224,3 +224,47 @@ private fun findByte(haystack: ByteArray, byte: Byte): Int? {
     }
     return null
 }
+
+/**
+ * Returns `true` if a byte must be quoted in a diff filename.
+ *
+ * Matches git's behavior with all control characters
+ * (0x00-0x1f), DEL (0x7f), double quote, and backslash.
+ */
+internal fun byteNeedsQuoting(b: Byte): Boolean {
+    val unsigned = b.toInt() and 0xFF
+    return unsigned < 0x20 || unsigned == 0x7f || b == '"'.code.toByte() || b == '\\'.code.toByte()
+}
+
+/**
+ * Writes one byte in its escaped form to a [StringBuilder] or [Appendable].
+ *
+ * Named escapes are used where git defines them (`\a`, `\b`,
+ * `\t`, `\n`, `\v`, `\f`, `\r`, `\\`, `\"`). Other bytes that
+ * require quoting are emitted as 3-digit octal (`\NNN`).
+ * Non-special bytes are written through unchanged.
+ */
+internal fun fmtEscapedByte(out: Appendable, b: Byte) {
+    when (b.toInt()) {
+        0x07 -> out.append("\\a")
+        0x08 -> out.append("\\b")
+        '\t'.code -> out.append("\\t")
+        '\n'.code -> out.append("\\n")
+        0x0b -> out.append("\\v")
+        0x0c -> out.append("\\f")
+        '\r'.code -> out.append("\\r")
+        '"'.code -> out.append("\\\"")
+        '\\'.code -> out.append("\\\\")
+        else -> {
+            val unsigned = b.toInt() and 0xFF
+            if (unsigned < 0x20 || unsigned == 0x7f) {
+                out.append("\\")
+                out.append('0' + (unsigned shr 6))
+                out.append('0' + ((unsigned shr 3) and 7))
+                out.append('0' + (unsigned and 7))
+            } else {
+                out.append(b.toInt().toChar())
+            }
+        }
+    }
+}
