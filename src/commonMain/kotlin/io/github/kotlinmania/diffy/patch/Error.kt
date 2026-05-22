@@ -7,16 +7,22 @@ package io.github.kotlinmania.diffy.patch
 @ConsistentCopyVisibility
 data class ParsePatchError internal constructor(
     internal val kind: ParsePatchErrorKind,
-    val span: IntRange? = null,
+    val span: IntRange?,
 ) {
-    constructor(kind: ParsePatchErrorKind, span: IntRange) : this(kind, span as IntRange?)
-
     override fun toString(): String =
         if (span != null) {
             "error parsing patch at byte ${span.first}: $kind"
         } else {
             "error parsing patch: $kind"
         }
+
+    companion object {
+        internal fun new(kind: ParsePatchErrorKind, span: IntRange): ParsePatchError =
+            ParsePatchError(kind, span)
+
+        internal fun new(kind: ParsePatchErrorKind): ParsePatchError =
+            ParsePatchError(kind, null)
+    }
 }
 
 /**
