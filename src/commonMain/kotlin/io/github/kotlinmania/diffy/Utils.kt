@@ -224,3 +224,211 @@ private fun findByte(haystack: ByteArray, byte: Byte): Int? {
     }
     return null
 }
+
+/**
+ * Returns `true` if a byte must be quoted in a diff filename.
+ *
+ * Matches git's behavior with all control characters
+ * (0x00-0x1f), DEL (0x7f), double quote, and backslash.
+ */
+internal fun byteNeedsQuoting(b: Byte): Boolean {
+    val unsigned = b.toInt() and 0xFF
+    return unsigned < 0x20 || unsigned == 0x7f || b == '"'.code.toByte() || b == '\\'.code.toByte()
+}
+
+/**
+ * Writes one byte in its escaped form to a [StringBuilder] or [Appendable].
+ *
+ * Named escapes are used where git defines them (`\a`, `\b`,
+ * `\t`, `\n`, `\v`, `\f`, `\r`, `\\`, `\"`). Other bytes that
+ * require quoting are emitted as 3-digit octal (`\NNN`).
+ * Non-special bytes are written through unchanged.
+ */
+internal fun fmtEscapedByte(out: Appendable, b: Byte) {
+    when (b.toInt()) {
+        0x07 -> out.append("\\a")
+        0x08 -> out.append("\\b")
+        '\t'.code -> out.append("\\t")
+        '\n'.code -> out.append("\\n")
+        0x0b -> out.append("\\v")
+        0x0c -> out.append("\\f")
+        '\r'.code -> out.append("\\r")
+        '"'.code -> out.append("\\\"")
+        '\\'.code -> out.append("\\\\")
+        else -> {
+            val unsigned = b.toInt() and 0xFF
+            if (unsigned < 0x20 || unsigned == 0x7f) {
+                out.append("\\")
+                out.append(('0'.code + (unsigned shr 6)).toChar())
+                out.append(('0'.code + ((unsigned shr 3) and 7)).toChar())
+                out.append(('0'.code + (unsigned and 7)).toChar())
+            } else {
+                out.append((b.toInt() and 0xFF).toChar())
+            }
+        }
+    }
+}
+
+/**
+ * Decodes escape sequences in a quoted filename.
+ *
+ * See [byteNeedsQuoting] for the set of characters that
+ * require quoting.
+ */
+internal fun escapedFilenameStr(filename: String): Result<String> {
+    val withQuotesStripped = if (filename.startsWith("\"") && filename.endsWith("\"")) {
+        filename.substring(1, filename.length - 1)
+    } else null
+
+    if (withQuotesStripped != null) {
+        // Quoted filename: decode escape sequences
+        val bytes = withQuotesStripped.encodeToByteArray()
+        val decodedBytes = decodeEscaped(bytes)
+        return when (decodedBytes) {
+            null -> {
+                // No escapes found, use the inner content directly
+                Result.success(withQuotesStripped)
+            }
+            else -> {
+                // Escapes were decoded; convert bytes back to String
+                runCatching {
+                    Result.success(decodedBytes.decodeToString(throwOnInvalidSequence = true))
+                }.getOrElse {
+                    Result.failure(
+                        io.github.kotlinmania.diffy.patch.ParsePatchError.new(
+                            io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidUtf8Path
+                        )
+                    )
+                }
+            }
+        }
+    } else {
+        // Unquoted filename: ensure it contains no characters that require quoting
+        val bytes = filename.encodeToByteArray()
+        if (bytes.any { byteNeedsQuoting(it) }) {
+            return Result.failure(
+                io.github.kotlinmania.diffy.patch.ParsePatchError.new(
+                    io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidCharInUnquotedFilename
+                )
+            )
+        }
+        return Result.success(filename)
+    }
+}
+
+internal fun escapedFilenameBytes(filename: ByteArray): Result<ByteArray> {
+    // Check if starts with " and ends with "
+    val withQuotesStripped = if (filename.size >= 2 &&
+        filename.first() == '"'.code.toByte() &&
+        filename.last() == '"'.code.toByte()
+    ) {
+        filename.copyOfRange(1, filename.size - 1)
+    } else null
+
+    if (withQuotesStripped != null) {
+        // Quoted filename: decode escape sequences
+        val decodedBytes = decodeEscaped(withQuotesStripped)
+        return when (decodedBytes) {
+            null -> {
+                // No escapes found, use the inner content directly
+                Result.success(withQuotesStripped)
+            }
+            else -> {
+                // Escapes were decoded
+                Result.success(decodedBytes)
+            }
+        }
+    } else {
+        // Unquoted filename: ensure it contains no characters that require quoting
+        if (filename.any { byteNeedsQuoting(it) }) {
+            return Result.failure(
+                io.github.kotlinmania.diffy.patch.ParsePatchError.new(
+                    io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidCharInUnquotedFilename
+                )
+            )
+        }
+        return Result.success(filename)
+    }
+}
+
+/**
+ * Decodes escape sequences in a byte array.
+ *
+ * Returns `null` if no escapes were found (the input is clean).
+ * Returns the decoded bytes if escapes were processed.
+ * Throws ParsePatchError if escape sequences are invalid.
+ */
+private fun decodeEscaped(bytes: ByteArray): ByteArray? {
+    val result = mutableListOf<Byte>()
+    var i = 0
+    var lastCopy = 0
+    var needsAllocation = false
+
+    while (i < bytes.size) {
+        if (bytes[i] == '\\'.code.toByte()) {
+            needsAllocation = true
+            result.addAll(bytes.copyOfRange(lastCopy, i).toList())
+
+            i += 1
+            if (i >= bytes.size) {
+                throw io.github.kotlinmania.diffy.patch.ParsePatchError.new(
+                    io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.ExpectedEscapedChar
+                )
+            }
+
+            val decoded = when (bytes[i]) {
+                'a'.code.toByte() -> 0x07.toByte()
+                'b'.code.toByte() -> 0x08.toByte()
+                'n'.code.toByte() -> '\n'.code.toByte()
+                't'.code.toByte() -> '\t'.code.toByte()
+                'v'.code.toByte() -> 0x0b.toByte()
+                'f'.code.toByte() -> 0x0c.toByte()
+                'r'.code.toByte() -> '\r'.code.toByte()
+                '"'.code.toByte() -> '"'.code.toByte()
+                '\\'.code.toByte() -> '\\'.code.toByte()
+                in '0'.code.toByte()..'3'.code.toByte() -> {
+                    // 3-digit octal: \0xx through \3xx (values 0x00–0xFF)
+                    val c = bytes[i]
+                    if (i + 2 >= bytes.size) {
+                        throw io.github.kotlinmania.diffy.patch.ParsePatchError.new(
+                            io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidEscapedChar
+                        )
+                    }
+                    val d1 = bytes[i + 1]
+                    val d2 = bytes[i + 2]
+                    if (d1 !in '0'.code.toByte()..'7'.code.toByte() ||
+                        d2 !in '0'.code.toByte()..'7'.code.toByte()
+                    ) {
+                        throw io.github.kotlinmania.diffy.patch.ParsePatchError.new(
+                            io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidEscapedChar
+                        )
+                    }
+                    i += 2
+                    val value = ((c - '0'.code.toByte()) shl 6) or
+                            ((d1 - '0'.code.toByte()) shl 3) or
+                            (d2 - '0'.code.toByte())
+                    value.toByte()
+                }
+                else -> throw io.github.kotlinmania.diffy.patch.ParsePatchError.new(
+                    io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidEscapedChar
+                )
+            }
+            result.add(decoded)
+            i += 1
+            lastCopy = i
+        } else if (byteNeedsQuoting(bytes[i])) {
+            throw io.github.kotlinmania.diffy.patch.ParsePatchError.new(
+                io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidUnescapedChar
+            )
+        } else {
+            i += 1
+        }
+    }
+
+    return if (needsAllocation) {
+        result.addAll(bytes.copyOfRange(lastCopy, bytes.size).toList())
+        result.toByteArray()
+    } else {
+        null
+    }
+}
