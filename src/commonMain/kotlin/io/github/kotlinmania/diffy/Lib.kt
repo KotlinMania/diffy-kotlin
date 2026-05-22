@@ -24,15 +24,15 @@ package io.github.kotlinmania.diffy
  *
  * This library has support for working with both utf8 and non-utf8 texts.
  * Most of the APIs have two different variants, one for working with utf8
- * [String] texts (e.g. [createPatch]) and one for working with bytes [ByteArray]
- * which may or may not be utf8 (e.g. [createPatchBytes]).
+ * [String] texts (e.g. [io.github.kotlinmania.diffy.diff.createPatch]) and one for working with bytes [ByteArray]
+ * which may or may not be utf8 (e.g. [io.github.kotlinmania.diffy.diff.createPatchBytes]).
  *
  * ## Creating a Patch
  *
  * A [io.github.kotlinmania.diffy.patch.Patch] between two texts can be created by doing the following:
  *
  * ```kotlin
- * import io.github.kotlinmania.diffy.createPatch
+ * import io.github.kotlinmania.diffy.diff.createPatch
  *
  * val original = "The Way of Kings\nWords of Radiance\n"
  * val modified = "The Way of Kings\nWords of Radiance\nOathbringer\n"
@@ -41,19 +41,26 @@ package io.github.kotlinmania.diffy
  * ```
  */
 
-// Re-export public types from submodules
-typealias Patch<T> = io.github.kotlinmania.diffy.patch.Patch<T>
-typealias Hunk<T> = io.github.kotlinmania.diffy.patch.Hunk<T>
-typealias HunkRange = io.github.kotlinmania.diffy.patch.HunkRange
-typealias Line<T> = io.github.kotlinmania.diffy.patch.Line<T>
-typealias ParsePatchError = io.github.kotlinmania.diffy.patch.ParsePatchError
-typealias ParsePatchErrorKind = io.github.kotlinmania.diffy.patch.ParsePatchErrorKind
+// Upstream re-exports from src/lib.rs:
+// pub use apply::ApplyError;
+// pub use apply::apply;
+// pub use apply::apply_bytes;
+// pub use diff::DiffOptions;
+// pub use diff::create_patch;
+// pub use diff::create_patch_bytes;
+// pub use merge::ConflictStyle;
+// pub use merge::MergeOptions;
+// pub use merge::merge;
+// pub use merge::merge_bytes;
+// pub use patch::Hunk;
+// pub use patch::HunkRange;
+// pub use patch::Line;
+// pub use patch::ParsePatchError;
+// pub use patch::Patch;
+// pub use patch::PatchFormatter;
 
-typealias DiffOptions = io.github.kotlinmania.diffy.diff.DiffOptions
+// Cross-repo Rust callers requiring migration (from RUST_CALLERS.md):
+// - codex-kotlin/codex-tui src/diff_render.rs:1 — use diffy::Hunk
 
-// Re-export public functions as top-level functions
-fun createPatch(original: String, modified: String): Patch<String> =
-    io.github.kotlinmania.diffy.diff.createPatch(original, modified)
-
-fun createPatchBytes(original: ByteArray, modified: ByteArray): Patch<ByteArray> =
-    io.github.kotlinmania.diffy.diff.createPatchBytes(original, modified)
+// Callers migrated:
+// (none yet - cannot migrate cross-repo callers; documented above for future work)
