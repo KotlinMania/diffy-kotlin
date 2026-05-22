@@ -90,6 +90,40 @@ class Patch<T> private constructor(
                 modified = modified?.let { Filename(it) },
                 hunks = hunks,
             )
+
+        /**
+         * Parse a [Patch] from a string
+         *
+         * ```
+         * val s = """
+         * --- a/ideals
+         * +++ b/ideals
+         * @@ -1,4 +1,6 @@
+         *  First:
+         *      Life before death,
+         *      strength before weakness,
+         *      journey before destination.
+         * +Second:
+         * +    I will protect those who cannot protect themselves.
+         * """
+         *
+         * val patch = Patch.fromStr(s).getOrThrow()
+         * ```
+         *
+         * ## Parsing behavior
+         *
+         * [fromStr] and [fromBytes] follow `git apply` behavior:
+         * trailing non-patch content after a complete hunk is ignored,
+         * but orphaned hunk headers hidden behind trailing content are rejected.
+         *
+         * For parsing multi-file patches, see the patch_set module.
+         */
+        fun fromStr(s: String): Result<Patch<String>> = parse(s)
+
+        /**
+         * Parse a [Patch] from bytes
+         */
+        fun fromBytes(bytes: ByteArray): Result<Patch<ByteArray>> = parseBytes(bytes)
     }
 }
 

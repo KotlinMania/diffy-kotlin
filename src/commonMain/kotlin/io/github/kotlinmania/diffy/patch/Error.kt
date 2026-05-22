@@ -8,13 +8,15 @@ package io.github.kotlinmania.diffy.patch
 data class ParsePatchError internal constructor(
     internal val kind: ParsePatchErrorKind,
     val span: IntRange?,
-) {
-    override fun toString(): String =
-        if (span != null) {
+) : Exception() {
+    override val message: String
+        get() = if (span != null) {
             "error parsing patch at byte ${span.first}: $kind"
         } else {
             "error parsing patch: $kind"
         }
+
+    override fun toString(): String = message
 
     companion object {
         internal fun new(kind: ParsePatchErrorKind, span: IntRange): ParsePatchError =
