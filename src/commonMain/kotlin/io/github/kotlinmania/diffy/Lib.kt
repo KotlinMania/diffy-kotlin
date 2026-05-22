@@ -58,6 +58,12 @@ package io.github.kotlinmania.diffy
 // pub use patch::ParsePatchError;
 // pub use patch::Patch;
 // pub use patch::PatchFormatter;
+//
+// Users should import from original packages:
+// - io.github.kotlinmania.diffy.diff.* for diff operations
+// - io.github.kotlinmania.diffy.patch.* for patch types
+// - io.github.kotlinmania.diffy.merge.* for merge operations (when ported)
+// - io.github.kotlinmania.diffy.apply.* for apply operations (when ported)
 
 // Cross-repo Rust callers requiring migration (from RUST_CALLERS.md):
 // - codex-kotlin/codex-tui src/diff_render.rs:1 — use diffy::Hunk

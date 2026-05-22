@@ -9,13 +9,11 @@ internal const val NO_NEWLINE_AT_EOF: String = "\\ No newline at end of file"
 /**
  * Representation of all the differences between two files
  *
- * ## Parsing behavior
+ * ## Display and formatting
  *
- * [fromStr] and [fromBytes] follow `git apply` behavior:
- * trailing non-patch content after a complete hunk is ignored,
- * but orphaned hunk headers hidden behind trailing content are rejected.
+ * Use [PatchFormatter] to format a patch for display in unified diff format.
  *
- * For parsing multi-file patches, use [PatchSet] instead.
+ * For parsing multi-file patches, see the patch_set module.
  */
 class Patch<T> private constructor(
     private val original: Filename<T>?,
@@ -92,37 +90,6 @@ class Patch<T> private constructor(
                 modified = modified?.let { Filename(it) },
                 hunks = hunks,
             )
-
-        /**
-         * Parse a [Patch] from a string
-         *
-         * Example:
-         * ```kotlin
-         * val s = """
-         * --- a/ideals
-         * +++ b/ideals
-         * @@ -1,4 +1,6 @@
-         *  First:
-         *      Life before death,
-         *      strength before weakness,
-         *      journey before destination.
-         * +Second:
-         * +    I will protect those who cannot protect themselves.
-         * """.trimIndent()
-         *
-         * val patch = Patch.fromStr(s).getOrThrow()
-         * ```
-         */
-        fun fromStr(s: String): Result<Patch<String>> {
-            TODO("Parse not yet implemented")
-        }
-
-        /**
-         * Parse a [Patch] from bytes
-         */
-        fun fromBytes(s: ByteArray): Result<Patch<ByteArray>> {
-            TODO("Parse not yet implemented")
-        }
     }
 }
 
