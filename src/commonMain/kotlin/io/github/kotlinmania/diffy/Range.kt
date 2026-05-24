@@ -1,4 +1,4 @@
-// port-lint: source src/range.rs
+// port-lint: source range.rs
 package io.github.kotlinmania.diffy
 
 import kotlin.math.min
@@ -60,6 +60,8 @@ class Range<T>(
         slice(RangeTo(mid)) to slice(RangeFrom(mid))
 
     fun copy(): Range<T> = Range(sliceLike, inner, offset, len)
+
+    fun clone(): Range<T> = copy()
 
     fun asSlice(): T = sliceLike.asSlice(inner, offset, offset + len)
 
@@ -255,7 +257,7 @@ object ByteSliceLike : SliceLike<ByteArray> {
     }
 
     // returns length of overlap of prefix of `this` with suffix of `other`
-    // TODO make a more efficient solution
+    // The upstream notes this could use a more efficient solution.
     override fun commonOverlapLen(a: ByteArray, b: ByteArray): Int {
         var len = min(a.size, b.size)
         while (len > 0) {
@@ -318,6 +320,14 @@ sealed class DiffRange<T> {
     fun shiftUp(adjust: Int) = forEach { it.shiftUp(adjust) }
 
     fun shiftDown(adjust: Int) = forEach { it.shiftDown(adjust) }
+
+    fun copy(): DiffRange<T> = when (this) {
+        is Equal -> Equal(left.copy(), right.copy())
+        is Delete -> Delete(range.copy())
+        is Insert -> Insert(range.copy())
+    }
+
+    fun clone(): DiffRange<T> = copy()
 
     private inline fun forEach(f: (Range<T>) -> Unit) {
         when (this) {

@@ -1,4 +1,4 @@
-// port-lint: source src/range.rs
+// port-lint: source range.rs
 package io.github.kotlinmania.diffy
 
 import kotlin.test.Test
