@@ -299,6 +299,7 @@ kotlin {
 
     // Web
     js {
+        configureBenchmarkCompilation()
         browser()
         nodejs()
     }
@@ -306,12 +307,14 @@ kotlin {
     // wasmJs is Stable as of Kotlin 2.2; @OptIn may be removable — verify before dropping on wasmWasi.
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
+        configureBenchmarkCompilation()
         browser()
         nodejs()
     }
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmWasi {
+        configureBenchmarkCompilation()
         nodejs()
     }
 
