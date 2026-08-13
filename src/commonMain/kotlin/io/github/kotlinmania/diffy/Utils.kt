@@ -11,7 +11,9 @@ package io.github.kotlinmania.diffy
  * Kotlin port routes hashing and equality through the supplied [TextLike], which
  * returns a stable [equalityKey] for each value of [T].
  */
-class Classifier<T>(private val textLike: TextLike<T>) {
+class Classifier<T>(
+    private val textLike: TextLike<T>,
+) {
     private var nextId: Long = 0
     private val uniqueIds: MutableMap<Any, Long> = mutableMapOf()
 
@@ -34,7 +36,10 @@ class Classifier<T>(private val textLike: TextLike<T>) {
 }
 
 /** Iterator over the lines of a string, including the `\n` character. */
-class LineIter<T>(private val textLike: TextLike<T>, initial: T) : Iterator<T> {
+class LineIter<T>(
+    private val textLike: TextLike<T>,
+    initial: T,
+) : Iterator<T> {
     private var current: T = initial
 
     override fun hasNext(): Boolean = !textLike.isEmpty(current)
@@ -61,18 +66,29 @@ class LineIter<T>(private val textLike: TextLike<T>, initial: T) : Iterator<T> {
  */
 interface TextLike<T> {
     fun isEmpty(value: T): Boolean
+
     fun len(value: T): Int
+
     fun startsWith(value: T, prefix: String): Boolean
+
     // The "unused" upstream attribute marks `endsWith` as currently dead; it is kept here
     // to mirror the trait surface.
     fun endsWith(value: T, suffix: String): Boolean
+
     fun stripPrefix(value: T, prefix: String): T?
+
     fun stripSuffix(value: T, suffix: String): T?
+
     fun splitAtExclusive(value: T, needle: String): Pair<T, T>?
+
     fun find(value: T, needle: String): Int?
+
     fun splitAt(value: T, mid: Int): Pair<T, T>
+
     fun asStr(value: T): String?
+
     fun asBytes(value: T): ByteArray
+
     // The "unused" upstream attribute marks `lines` as currently dead; it is kept here
     // to mirror the trait surface.
     fun lines(value: T): LineIter<T>
@@ -189,9 +205,13 @@ object ByteTextLike : TextLike<ByteArray> {
     override fun equalityKey(value: ByteArray): Any = ByteArrayKey(value)
 }
 
-private class ByteArrayKey(private val bytes: ByteArray) {
+private class ByteArrayKey(
+    private val bytes: ByteArray,
+) {
     private val cachedHash = bytes.contentHashCode()
+
     override fun hashCode(): Int = cachedHash
+
     override fun equals(other: Any?): Boolean =
         other is ByteArrayKey && bytes.contentEquals(other.bytes)
 }
@@ -276,9 +296,12 @@ internal fun fmtEscapedByte(out: Appendable, b: Byte) {
  * require quoting.
  */
 internal fun escapedFilenameStr(filename: String): Result<String> {
-    val withQuotesStripped = if (filename.startsWith("\"") && filename.endsWith("\"")) {
-        filename.substring(1, filename.length - 1)
-    } else null
+    val withQuotesStripped =
+        if (filename.startsWith("\"") && filename.endsWith("\"")) {
+            filename.substring(1, filename.length - 1)
+        } else {
+            null
+        }
 
     if (withQuotesStripped != null) {
         // Quoted filename: decode escape sequences
@@ -296,8 +319,8 @@ internal fun escapedFilenameStr(filename: String): Result<String> {
                 }.getOrElse {
                     Result.failure(
                         io.github.kotlinmania.diffy.patch.ParsePatchError.new(
-                            io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidUtf8Path
-                        )
+                            io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidUtf8Path,
+                        ),
                     )
                 }
             }
@@ -308,8 +331,8 @@ internal fun escapedFilenameStr(filename: String): Result<String> {
         if (bytes.any { byteNeedsQuoting(it) }) {
             return Result.failure(
                 io.github.kotlinmania.diffy.patch.ParsePatchError.new(
-                    io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidCharInUnquotedFilename
-                )
+                    io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidCharInUnquotedFilename,
+                ),
             )
         }
         return Result.success(filename)
@@ -318,12 +341,15 @@ internal fun escapedFilenameStr(filename: String): Result<String> {
 
 internal fun escapedFilenameBytes(filename: ByteArray): Result<ByteArray> {
     // Check if starts with " and ends with "
-    val withQuotesStripped = if (filename.size >= 2 &&
-        filename.first() == '"'.code.toByte() &&
-        filename.last() == '"'.code.toByte()
-    ) {
-        filename.copyOfRange(1, filename.size - 1)
-    } else null
+    val withQuotesStripped =
+        if (filename.size >= 2 &&
+            filename.first() == '"'.code.toByte() &&
+            filename.last() == '"'.code.toByte()
+        ) {
+            filename.copyOfRange(1, filename.size - 1)
+        } else {
+            null
+        }
 
     if (withQuotesStripped != null) {
         // Quoted filename: decode escape sequences
@@ -343,8 +369,8 @@ internal fun escapedFilenameBytes(filename: ByteArray): Result<ByteArray> {
         if (filename.any { byteNeedsQuoting(it) }) {
             return Result.failure(
                 io.github.kotlinmania.diffy.patch.ParsePatchError.new(
-                    io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidCharInUnquotedFilename
-                )
+                    io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidCharInUnquotedFilename,
+                ),
             )
         }
         return Result.success(filename)
@@ -372,53 +398,55 @@ private fun decodeEscaped(bytes: ByteArray): ByteArray? {
             i += 1
             if (i >= bytes.size) {
                 throw io.github.kotlinmania.diffy.patch.ParsePatchError.new(
-                    io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.ExpectedEscapedChar
+                    io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.ExpectedEscapedChar,
                 )
             }
 
-            val decoded = when (bytes[i]) {
-                'a'.code.toByte() -> 0x07.toByte()
-                'b'.code.toByte() -> 0x08.toByte()
-                'n'.code.toByte() -> '\n'.code.toByte()
-                't'.code.toByte() -> '\t'.code.toByte()
-                'v'.code.toByte() -> 0x0b.toByte()
-                'f'.code.toByte() -> 0x0c.toByte()
-                'r'.code.toByte() -> '\r'.code.toByte()
-                '"'.code.toByte() -> '"'.code.toByte()
-                '\\'.code.toByte() -> '\\'.code.toByte()
-                in '0'.code.toByte()..'3'.code.toByte() -> {
-                    // 3-digit octal: \0xx through \3xx (values 0x00–0xFF)
-                    val c = bytes[i]
-                    if (i + 2 >= bytes.size) {
-                        throw io.github.kotlinmania.diffy.patch.ParsePatchError.new(
-                            io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidEscapedChar
-                        )
+            val decoded =
+                when (bytes[i]) {
+                    'a'.code.toByte() -> 0x07.toByte()
+                    'b'.code.toByte() -> 0x08.toByte()
+                    'n'.code.toByte() -> '\n'.code.toByte()
+                    't'.code.toByte() -> '\t'.code.toByte()
+                    'v'.code.toByte() -> 0x0b.toByte()
+                    'f'.code.toByte() -> 0x0c.toByte()
+                    'r'.code.toByte() -> '\r'.code.toByte()
+                    '"'.code.toByte() -> '"'.code.toByte()
+                    '\\'.code.toByte() -> '\\'.code.toByte()
+                    in '0'.code.toByte()..'3'.code.toByte() -> {
+                        // 3-digit octal: \0xx through \3xx (values 0x00–0xFF)
+                        val c = bytes[i]
+                        if (i + 2 >= bytes.size) {
+                            throw io.github.kotlinmania.diffy.patch.ParsePatchError.new(
+                                io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidEscapedChar,
+                            )
+                        }
+                        val d1 = bytes[i + 1]
+                        val d2 = bytes[i + 2]
+                        if (d1 !in '0'.code.toByte()..'7'.code.toByte() ||
+                            d2 !in '0'.code.toByte()..'7'.code.toByte()
+                        ) {
+                            throw io.github.kotlinmania.diffy.patch.ParsePatchError.new(
+                                io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidEscapedChar,
+                            )
+                        }
+                        i += 2
+                        val value =
+                            ((c - '0'.code.toByte()) shl 6) or
+                                ((d1 - '0'.code.toByte()) shl 3) or
+                                (d2 - '0'.code.toByte())
+                        value.toByte()
                     }
-                    val d1 = bytes[i + 1]
-                    val d2 = bytes[i + 2]
-                    if (d1 !in '0'.code.toByte()..'7'.code.toByte() ||
-                        d2 !in '0'.code.toByte()..'7'.code.toByte()
-                    ) {
-                        throw io.github.kotlinmania.diffy.patch.ParsePatchError.new(
-                            io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidEscapedChar
-                        )
-                    }
-                    i += 2
-                    val value = ((c - '0'.code.toByte()) shl 6) or
-                            ((d1 - '0'.code.toByte()) shl 3) or
-                            (d2 - '0'.code.toByte())
-                    value.toByte()
+                    else -> throw io.github.kotlinmania.diffy.patch.ParsePatchError.new(
+                        io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidEscapedChar,
+                    )
                 }
-                else -> throw io.github.kotlinmania.diffy.patch.ParsePatchError.new(
-                    io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidEscapedChar
-                )
-            }
             result.add(decoded)
             i += 1
             lastCopy = i
         } else if (byteNeedsQuoting(bytes[i])) {
             throw io.github.kotlinmania.diffy.patch.ParsePatchError.new(
-                io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidUnescapedChar
+                io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidUnescapedChar,
             )
         } else {
             i += 1

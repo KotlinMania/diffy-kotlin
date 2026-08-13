@@ -1,12 +1,12 @@
 // port-lint: source src/patch/parse.rs
 package io.github.kotlinmania.diffy.patch
 
+import io.github.kotlinmania.diffy.ByteTextLike
 import io.github.kotlinmania.diffy.LineIter
 import io.github.kotlinmania.diffy.StrTextLike
-import io.github.kotlinmania.diffy.ByteTextLike
 import io.github.kotlinmania.diffy.TextLike
-import io.github.kotlinmania.diffy.escapedFilenameStr
 import io.github.kotlinmania.diffy.escapedFilenameBytes
+import io.github.kotlinmania.diffy.escapedFilenameStr
 
 /**
  * Options that control parsing behavior.
@@ -54,16 +54,17 @@ internal class Parser<T>(
     fun offset(): Int = offset
 
     fun next(): Result<T> {
-        val line = if (peeked != null) {
-            val p = peeked
-            peeked = null
-            p!!
-        } else {
-            if (!lines.hasNext()) {
-                return Result.failure(error(ParsePatchErrorKind.UnexpectedEof))
+        val line =
+            if (peeked != null) {
+                val p = peeked
+                peeked = null
+                p!!
+            } else {
+                if (!lines.hasNext()) {
+                    return Result.failure(error(ParsePatchErrorKind.UnexpectedEof))
+                }
+                lines.next()
             }
-            lines.next()
-        }
         offset += textLike.len(line)
         return Result.success(line)
     }
@@ -277,12 +278,14 @@ private fun parseFilenameStr(
     prefix: String,
     line: String,
 ): Result<String> {
-    val stripped = line.removePrefix(prefix).takeIf { it != line }
-        ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.InvalidFilename))
+    val stripped =
+        line.removePrefix(prefix).takeIf { it != line }
+            ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.InvalidFilename))
 
-    val filename = stripped.substringBefore('\t').takeIf { it != stripped }
-        ?: stripped.substringBefore('\n').takeIf { it != stripped }
-        ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.FilenameUnterminated))
+    val filename =
+        stripped.substringBefore('\t').takeIf { it != stripped }
+            ?: stripped.substringBefore('\n').takeIf { it != stripped }
+            ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.FilenameUnterminated))
 
     return escapedFilenameStr(filename)
 }
@@ -292,20 +295,22 @@ private fun parseFilenameBytes(
     line: ByteArray,
 ): Result<ByteArray> {
     val prefixBytes = prefix.encodeToByteArray()
-    val stripped = if (line.size >= prefixBytes.size && line.copyOfRange(0, prefixBytes.size).contentEquals(prefixBytes)) {
-        line.copyOfRange(prefixBytes.size, line.size)
-    } else {
-        return Result.failure(ParsePatchError.new(ParsePatchErrorKind.InvalidFilename))
-    }
+    val stripped =
+        if (line.size >= prefixBytes.size && line.copyOfRange(0, prefixBytes.size).contentEquals(prefixBytes)) {
+            line.copyOfRange(prefixBytes.size, line.size)
+        } else {
+            return Result.failure(ParsePatchError.new(ParsePatchErrorKind.InvalidFilename))
+        }
 
     val tabIdx = stripped.indexOfFirst { it == '\t'.code.toByte() }
     val nlIdx = stripped.indexOfFirst { it == '\n'.code.toByte() }
 
-    val filename = when {
-        tabIdx >= 0 -> stripped.copyOfRange(0, tabIdx)
-        nlIdx >= 0 -> stripped.copyOfRange(0, nlIdx)
-        else -> return Result.failure(ParsePatchError.new(ParsePatchErrorKind.FilenameUnterminated))
-    }
+    val filename =
+        when {
+            tabIdx >= 0 -> stripped.copyOfRange(0, tabIdx)
+            nlIdx >= 0 -> stripped.copyOfRange(0, nlIdx)
+            else -> return Result.failure(ParsePatchError.new(ParsePatchErrorKind.FilenameUnterminated))
+        }
 
     return escapedFilenameBytes(filename)
 }
@@ -410,19 +415,23 @@ private fun <T> hunkHeader(
     textLike: TextLike<T>,
     input: T,
 ): Result<HunkHeaderResult<T>> {
-    val stripped = textLike.stripPrefix(input, "@@ ")
-        ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.InvalidHunkHeader))
+    val stripped =
+        textLike.stripPrefix(input, "@@ ")
+            ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.InvalidHunkHeader))
 
-    val (ranges, afterRanges) = textLike.splitAtExclusive(stripped, " @@")
-        ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.HunkHeaderUnterminated))
+    val (ranges, afterRanges) =
+        textLike.splitAtExclusive(stripped, " @@")
+            ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.HunkHeaderUnterminated))
 
     val functionContext = textLike.stripPrefix(afterRanges, " ")
 
-    val (range1Str, range2Str) = textLike.splitAtExclusive(ranges, " ")
-        ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.InvalidHunkHeader))
+    val (range1Str, range2Str) =
+        textLike.splitAtExclusive(ranges, " ")
+            ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.InvalidHunkHeader))
 
-    val range1WithoutMinus = textLike.stripPrefix(range1Str, "-")
-        ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.InvalidHunkHeader))
+    val range1WithoutMinus =
+        textLike.stripPrefix(range1Str, "-")
+            ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.InvalidHunkHeader))
 
     val range1Result = parseRange(textLike, range1WithoutMinus)
     if (range1Result.isFailure) {
@@ -430,8 +439,9 @@ private fun <T> hunkHeader(
     }
     val range1 = range1Result.getOrThrow()
 
-    val range2WithoutPlus = textLike.stripPrefix(range2Str, "+")
-        ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.InvalidHunkHeader))
+    val range2WithoutPlus =
+        textLike.stripPrefix(range2Str, "+")
+            ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.InvalidHunkHeader))
 
     val range2Result = parseRange(textLike, range2WithoutPlus)
     if (range2Result.isFailure) {
@@ -447,17 +457,21 @@ private fun <T> parseRange(
     s: T,
 ): Result<HunkRange> {
     val pair = textLike.splitAtExclusive(s, ",")
-    val (start, len) = if (pair != null) {
-        val startVal = textLike.parse(pair.first) { it.toIntOrNull() }
-            ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.InvalidRange))
-        val lenVal = textLike.parse(pair.second) { it.toIntOrNull() }
-            ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.InvalidRange))
-        startVal to lenVal
-    } else {
-        val startVal = textLike.parse(s) { it.toIntOrNull() }
-            ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.InvalidRange))
-        startVal to 1
-    }
+    val (start, len) =
+        if (pair != null) {
+            val startVal =
+                textLike.parse(pair.first) { it.toIntOrNull() }
+                    ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.InvalidRange))
+            val lenVal =
+                textLike.parse(pair.second) { it.toIntOrNull() }
+                    ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.InvalidRange))
+            startVal to lenVal
+        } else {
+            val startVal =
+                textLike.parse(s) { it.toIntOrNull() }
+                    ?: return Result.failure(ParsePatchError.new(ParsePatchErrorKind.InvalidRange))
+            startVal to 1
+        }
 
     // reject ranges that overflow
     if (start < 0 || len < 0) {
@@ -493,103 +507,109 @@ private fun <T> hunkLines(
         // Check if hunk is complete
         val hunkComplete = oldCount >= expectedOld && newCount >= expectedNew
 
-        val line: Line<T>? = when {
-            textLike.startsWith(peekedLine, "@") -> {
-                break
-            }
-            noNewlineContext -> {
-                // After `\ No newline at end of file` on a context line,
-                // only a new hunk header is valid. Any other line means
-                // the hunk should be complete, or it's an error.
-                if (hunkComplete) {
+        val line: Line<T>? =
+            when {
+                textLike.startsWith(peekedLine, "@") -> {
                     break
                 }
-                return Result.failure(parser.error(ParsePatchErrorKind.ExpectedEndOfHunk))
-            }
-            textLike.startsWith(peekedLine, " ") -> {
-                if (hunkComplete) {
-                    break
-                }
-                val stripped = textLike.stripPrefix(peekedLine, " ")!!
-                Line.Context(stripped)
-            }
-            textLike.startsWith(peekedLine, "\n") -> {
-                if (hunkComplete) {
-                    break
-                }
-                Line.Context(peekedLine)
-            }
-            textLike.startsWith(peekedLine, "-") -> {
-                if (noNewlineDelete) {
-                    return Result.failure(parser.error(ParsePatchErrorKind.TooManyDeletedLines))
-                }
-                if (hunkComplete) {
-                    break
-                }
-                val stripped = textLike.stripPrefix(peekedLine, "-")!!
-                Line.Delete(stripped)
-            }
-            textLike.startsWith(peekedLine, "+") -> {
-                if (noNewlineInsert) {
-                    return Result.failure(parser.error(ParsePatchErrorKind.TooManyInsertedLines))
-                }
-                if (hunkComplete) {
-                    break
-                }
-                val stripped = textLike.stripPrefix(peekedLine, "+")!!
-                Line.Insert(stripped)
-            }
-            textLike.startsWith(peekedLine, NO_NEWLINE_AT_EOF) -> {
-                // The `\ No newline at end of file` marker indicates
-                // the previous line doesn't end with a newline.
-                // It's not a content line itself.
-                // Therefore, we
-                //
-                // * strip the newline character of the previous line
-                // * don't increment line counts and continue to next directly
-                if (lines.isEmpty()) {
-                    return Result.failure(parser.error(ParsePatchErrorKind.UnexpectedNoNewlineMarker))
-                }
-                val lastLine = lines.removeLast()
-                val stripResult = stripNewline(textLike, when (lastLine) {
-                    is Line.Context -> lastLine.value
-                    is Line.Delete -> lastLine.value
-                    is Line.Insert -> lastLine.value
-                })
-                if (stripResult.isFailure) {
-                    return Result.failure(stripResult.exceptionOrNull()!!)
-                }
-                val stripped = stripResult.getOrThrow()
-                val modified = when (lastLine) {
-                    is Line.Context -> {
-                        noNewlineContext = true
-                        Line.Context(stripped)
+                noNewlineContext -> {
+                    // After `\ No newline at end of file` on a context line,
+                    // only a new hunk header is valid. Any other line means
+                    // the hunk should be complete, or it's an error.
+                    if (hunkComplete) {
+                        break
                     }
-                    is Line.Delete -> {
-                        noNewlineDelete = true
-                        Line.Delete(stripped)
+                    return Result.failure(parser.error(ParsePatchErrorKind.ExpectedEndOfHunk))
+                }
+                textLike.startsWith(peekedLine, " ") -> {
+                    if (hunkComplete) {
+                        break
                     }
-                    is Line.Insert -> {
-                        noNewlineInsert = true
-                        Line.Insert(stripped)
+                    val stripped = textLike.stripPrefix(peekedLine, " ")!!
+                    Line.Context(stripped)
+                }
+                textLike.startsWith(peekedLine, "\n") -> {
+                    if (hunkComplete) {
+                        break
                     }
+                    Line.Context(peekedLine)
                 }
-                lines.add(modified)
-                val nextResult = parser.next()
-                if (nextResult.isFailure) {
-                    return Result.failure(nextResult.exceptionOrNull()!!)
+                textLike.startsWith(peekedLine, "-") -> {
+                    if (noNewlineDelete) {
+                        return Result.failure(parser.error(ParsePatchErrorKind.TooManyDeletedLines))
+                    }
+                    if (hunkComplete) {
+                        break
+                    }
+                    val stripped = textLike.stripPrefix(peekedLine, "-")!!
+                    Line.Delete(stripped)
                 }
-                continue
+                textLike.startsWith(peekedLine, "+") -> {
+                    if (noNewlineInsert) {
+                        return Result.failure(parser.error(ParsePatchErrorKind.TooManyInsertedLines))
+                    }
+                    if (hunkComplete) {
+                        break
+                    }
+                    val stripped = textLike.stripPrefix(peekedLine, "+")!!
+                    Line.Insert(stripped)
+                }
+                textLike.startsWith(peekedLine, NO_NEWLINE_AT_EOF) -> {
+                    // The `\ No newline at end of file` marker indicates
+                    // the previous line doesn't end with a newline.
+                    // It's not a content line itself.
+                    // Therefore, we
+                    //
+                    // * strip the newline character of the previous line
+                    // * don't increment line counts and continue to next directly
+                    if (lines.isEmpty()) {
+                        return Result.failure(parser.error(ParsePatchErrorKind.UnexpectedNoNewlineMarker))
+                    }
+                    val lastLine = lines.removeLast()
+                    val stripResult =
+                        stripNewline(
+                            textLike,
+                            when (lastLine) {
+                                is Line.Context -> lastLine.value
+                                is Line.Delete -> lastLine.value
+                                is Line.Insert -> lastLine.value
+                            },
+                        )
+                    if (stripResult.isFailure) {
+                        return Result.failure(stripResult.exceptionOrNull()!!)
+                    }
+                    val stripped = stripResult.getOrThrow()
+                    val modified =
+                        when (lastLine) {
+                            is Line.Context -> {
+                                noNewlineContext = true
+                                Line.Context(stripped)
+                            }
+                            is Line.Delete -> {
+                                noNewlineDelete = true
+                                Line.Delete(stripped)
+                            }
+                            is Line.Insert -> {
+                                noNewlineInsert = true
+                                Line.Insert(stripped)
+                            }
+                        }
+                    lines.add(modified)
+                    val nextResult = parser.next()
+                    if (nextResult.isFailure) {
+                        return Result.failure(nextResult.exceptionOrNull()!!)
+                    }
+                    continue
+                }
+                else -> {
+                    // Non-hunk line encountered
+                    if (hunkComplete) {
+                        // Hunk is complete, treat remaining content as garbage
+                        break
+                    }
+                    return Result.failure(parser.error(ParsePatchErrorKind.UnexpectedHunkLine))
+                }
             }
-            else -> {
-                // Non-hunk line encountered
-                if (hunkComplete) {
-                    // Hunk is complete, treat remaining content as garbage
-                    break
-                }
-                return Result.failure(parser.error(ParsePatchErrorKind.UnexpectedHunkLine))
-            }
-        }
 
         if (line != null) {
             when (line) {
