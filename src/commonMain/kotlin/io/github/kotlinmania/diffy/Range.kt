@@ -101,7 +101,10 @@ interface RangeBounds {
         tryIndex(len) ?: error("index out of range, index=$this, len=$len")
 }
 
-data class RangeStartEnd(val start: Int, val endExclusive: Int) : RangeBounds {
+data class RangeStartEnd(
+    val start: Int,
+    val endExclusive: Int,
+) : RangeBounds {
     override fun tryIndex(len: Int): Pair<Int, Int>? =
         if (start <= endExclusive && endExclusive <= len) {
             start to (endExclusive - start)
@@ -110,12 +113,16 @@ data class RangeStartEnd(val start: Int, val endExclusive: Int) : RangeBounds {
         }
 }
 
-data class RangeFrom(val start: Int) : RangeBounds {
+data class RangeFrom(
+    val start: Int,
+) : RangeBounds {
     override fun tryIndex(len: Int): Pair<Int, Int>? =
         if (start <= len) start to (len - start) else null
 }
 
-data class RangeTo(val endExclusive: Int) : RangeBounds {
+data class RangeTo(
+    val endExclusive: Int,
+) : RangeBounds {
     override fun tryIndex(len: Int): Pair<Int, Int>? =
         if (endExclusive <= len) 0 to endExclusive else null
 }
@@ -126,12 +133,19 @@ object RangeFull : RangeBounds {
 
 interface SliceLike<T> {
     fun len(value: T): Int
+
     fun empty(): T
+
     fun asSlice(value: T, start: Int, endExclusive: Int): T
+
     fun commonPrefixLen(a: T, b: T): Int
+
     fun commonSuffixLen(a: T, b: T): Int
+
     fun commonOverlapLen(a: T, b: T): Int
+
     fun startsWith(value: T, prefix: T): Boolean
+
     fun endsWith(value: T, suffix: T): Boolean
 }
 
@@ -295,15 +309,25 @@ object ByteSliceLike : SliceLike<ByteArray> {
 }
 
 sealed class DiffRange<T> {
-    class Equal<T>(val left: Range<T>, val right: Range<T>) : DiffRange<T>()
-    class Delete<T>(val range: Range<T>) : DiffRange<T>()
-    class Insert<T>(val range: Range<T>) : DiffRange<T>()
+    class Equal<T>(
+        val left: Range<T>,
+        val right: Range<T>,
+    ) : DiffRange<T>()
 
-    fun inner(): Range<T> = when (this) {
-        is Equal -> left
-        is Delete -> range
-        is Insert -> range
-    }
+    class Delete<T>(
+        val range: Range<T>,
+    ) : DiffRange<T>()
+
+    class Insert<T>(
+        val range: Range<T>,
+    ) : DiffRange<T>()
+
+    fun inner(): Range<T> =
+        when (this) {
+            is Equal -> left
+            is Delete -> range
+            is Insert -> range
+        }
 
     fun isEmpty(): Boolean = inner().isEmpty()
 
@@ -321,11 +345,12 @@ sealed class DiffRange<T> {
 
     fun shiftDown(adjust: Int) = forEach { it.shiftDown(adjust) }
 
-    fun copy(): DiffRange<T> = when (this) {
-        is Equal -> Equal(left.copy(), right.copy())
-        is Delete -> Delete(range.copy())
-        is Insert -> Insert(range.copy())
-    }
+    fun copy(): DiffRange<T> =
+        when (this) {
+            is Equal -> Equal(left.copy(), right.copy())
+            is Delete -> Delete(range.copy())
+            is Insert -> Insert(range.copy())
+        }
 
     fun clone(): DiffRange<T> = copy()
 
@@ -340,11 +365,12 @@ sealed class DiffRange<T> {
         }
     }
 
-    override fun toString(): String = when (this) {
-        is Equal -> "DiffRange::Equal($left, $right)"
-        is Delete -> "DiffRange::Delete($range)"
-        is Insert -> "DiffRange::Insert($range)"
-    }
+    override fun toString(): String =
+        when (this) {
+            is Equal -> "DiffRange::Equal($left, $right)"
+            is Delete -> "DiffRange::Delete($range)"
+            is Insert -> "DiffRange::Insert($range)"
+        }
 }
 
 fun DiffRange<ByteArray>.toStr(text1: String, text2: String): DiffRange<String> {
@@ -433,12 +459,13 @@ private fun String.codePointStartBefore(pos: Int): Int {
     return pos - 1
 }
 
-private fun Int.utf8ByteWidth(): Int = when {
-    this < 0x80 -> 1
-    this < 0x800 -> 2
-    this < 0x10000 -> 3
-    else -> 4
-}
+private fun Int.utf8ByteWidth(): Int =
+    when {
+        this < 0x80 -> 1
+        this < 0x800 -> 2
+        this < 0x10000 -> 3
+        else -> 4
+    }
 
 private fun String.codePointAtKmp(index: Int): Int {
     val high = this[index].code

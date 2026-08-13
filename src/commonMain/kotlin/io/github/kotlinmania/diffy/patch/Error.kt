@@ -10,11 +10,12 @@ data class ParsePatchError internal constructor(
     val span: IntRange?,
 ) : Exception() {
     override val message: String
-        get() = if (span != null) {
-            "error parsing patch at byte ${span.first}: $kind"
-        } else {
-            "error parsing patch: $kind"
-        }
+        get() =
+            if (span != null) {
+                "error parsing patch at byte ${span.first}: $kind"
+            } else {
+                "error parsing patch: $kind"
+            }
 
     override fun toString(): String = message
 
@@ -97,28 +98,29 @@ sealed class ParsePatchErrorKind {
     /** Filename contains invalid UTF-8 when parsing as text. */
     data object InvalidUtf8Path : ParsePatchErrorKind()
 
-    override fun toString(): String = when (this) {
-        UnexpectedEof -> "unexpected EOF"
-        MultipleOriginalHeaders -> "multiple '---' lines"
-        MultipleModifiedHeaders -> "multiple '+++' lines"
-        InvalidFilename -> "unable to parse filename"
-        FilenameUnterminated -> "filename unterminated"
-        InvalidCharInUnquotedFilename -> "invalid char in unquoted filename"
-        ExpectedEscapedChar -> "expected escaped character"
-        InvalidEscapedChar -> "invalid escaped character"
-        InvalidUnescapedChar -> "invalid unescaped character"
-        InvalidHunkHeader -> "unable to parse hunk header"
-        HunkHeaderUnterminated -> "hunk header unterminated"
-        InvalidRange -> "can't parse range"
-        HunksOutOfOrder -> "hunks not in order or overlap"
-        HunkMismatch -> "hunk header does not match hunk"
-        ExpectedEndOfHunk -> "expected end of hunk"
-        TooManyDeletedLines -> "expected no more deleted lines"
-        TooManyInsertedLines -> "expected no more inserted lines"
-        UnexpectedNoNewlineMarker -> "unexpected 'No newline at end of file' line"
-        UnexpectedHunkLine -> "unexpected line in hunk body"
-        MissingNewline -> "missing newline"
-        OrphanedHunkHeader -> "orphaned hunk header after trailing content"
-        InvalidUtf8Path -> "filename is not valid UTF-8"
-    }
+    override fun toString(): String =
+        when (this) {
+            UnexpectedEof -> "unexpected EOF"
+            MultipleOriginalHeaders -> "multiple '---' lines"
+            MultipleModifiedHeaders -> "multiple '+++' lines"
+            InvalidFilename -> "unable to parse filename"
+            FilenameUnterminated -> "filename unterminated"
+            InvalidCharInUnquotedFilename -> "invalid char in unquoted filename"
+            ExpectedEscapedChar -> "expected escaped character"
+            InvalidEscapedChar -> "invalid escaped character"
+            InvalidUnescapedChar -> "invalid unescaped character"
+            InvalidHunkHeader -> "unable to parse hunk header"
+            HunkHeaderUnterminated -> "hunk header unterminated"
+            InvalidRange -> "can't parse range"
+            HunksOutOfOrder -> "hunks not in order or overlap"
+            HunkMismatch -> "hunk header does not match hunk"
+            ExpectedEndOfHunk -> "expected end of hunk"
+            TooManyDeletedLines -> "expected no more deleted lines"
+            TooManyInsertedLines -> "expected no more inserted lines"
+            UnexpectedNoNewlineMarker -> "unexpected 'No newline at end of file' line"
+            UnexpectedHunkLine -> "unexpected line in hunk body"
+            MissingNewline -> "missing newline"
+            OrphanedHunkHeader -> "orphaned hunk header after trailing content"
+            InvalidUtf8Path -> "filename is not valid UTF-8"
+        }
 }

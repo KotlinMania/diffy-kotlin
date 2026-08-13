@@ -211,14 +211,15 @@ fun installProjectAndroidSdk(execOperations: ExecOperations) {
 
 writeAndroidLocalProperties()
 
-val ensureAndroidSdk by tasks.registering {
-    group = "setup"
-    description = "Ensures the project-local Android SDK is installed (idempotent)."
-    onlyIf("Android SDK already installed at $projectAndroidSdkDir") { !isProjectAndroidSdkInstalled() }
-    doLast {
-        installProjectAndroidSdk(serviceOf())
+val ensureAndroidSdk =
+    tasks.register("ensureAndroidSdk") {
+        group = "setup"
+        description = "Ensures the project-local Android SDK is installed (idempotent)."
+        onlyIf("Android SDK already installed at $projectAndroidSdkDir") { !isProjectAndroidSdkInstalled() }
+        doLast {
+            installProjectAndroidSdk(serviceOf())
+        }
     }
-}
 
 tasks.matching { it.name == "compileAndroidMain" }.configureEach {
     dependsOn(ensureAndroidSdk)
@@ -299,7 +300,6 @@ kotlin {
 
     // Web
     js {
-        configureBenchmarkCompilation()
         browser()
         nodejs()
     }
@@ -307,14 +307,12 @@ kotlin {
     // wasmJs is Stable as of Kotlin 2.2; @OptIn may be removable — verify before dropping on wasmWasi.
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
-        configureBenchmarkCompilation()
         browser()
         nodejs()
     }
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmWasi {
-        configureBenchmarkCompilation()
         nodejs()
     }
 
@@ -355,8 +353,6 @@ kotlin {
         }
     }
 }
-
-
 
 // ============================================================================
 // Test logging
@@ -454,13 +450,13 @@ rootProject.extensions.configure<YarnRootEnvSpec>("kotlinYarnSpec") { version.se
 rootProject.extensions.configure<WasmYarnRootEnvSpec>("kotlinWasmYarnSpec") { version.set(wasmYarnVersion) }
 
 rootProject.extensions.configure<YarnRootExtension>("kotlinYarn") {
-    project.properties
-        .filterKeys { it.startsWith("yarn.resolution.") }
+    providers
+        .gradlePropertiesPrefixedBy("yarn.resolution.")
+        .get()
         .forEach { (key, value) ->
             val pkg = key.removePrefix("yarn.resolution.")
-            val ver = value as? String ?: return@forEach
-            resolution(pkg, ver)
-            resolution("**/$pkg", ver)
+            resolution(pkg, value)
+            resolution("**/$pkg", value)
         }
     // webpack resolution sourced from kotlin-js-store/package.json (see above)
     // rather than a yarn.resolution.webpack property, so it can never override a

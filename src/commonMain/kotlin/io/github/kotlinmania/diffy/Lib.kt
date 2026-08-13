@@ -70,3 +70,8 @@ package io.github.kotlinmania.diffy
 
 // Callers migrated:
 // (none yet - cannot migrate cross-repo callers; documented above for future work)
+
+// Upstream lib.rs re-exports symbols from submodules; in Kotlin, users import
+// directly from the submodule packages. This file exists as the module root
+// and intentionally has no public API surface.
+public object Lib

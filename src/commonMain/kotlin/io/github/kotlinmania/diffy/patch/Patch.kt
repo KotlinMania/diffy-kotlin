@@ -127,7 +127,9 @@ class Patch<T> private constructor(
     }
 }
 
-internal class Filename<T>(val value: T) {
+internal class Filename<T>(
+    val value: T,
+) {
     fun needsToBeEscapedBytes(bytes: ByteArray): Boolean =
         bytes.any { byteNeedsQuoting(it) }
 
@@ -154,41 +156,43 @@ internal class Filename<T>(val value: T) {
         }
     }
 
-    override fun hashCode(): Int = when (value) {
-        is ByteArray -> value.contentHashCode()
-        else -> value.hashCode()
-    }
+    override fun hashCode(): Int =
+        when (value) {
+            is ByteArray -> value.contentHashCode()
+            else -> value.hashCode()
+        }
 
-    override fun toString(): String = when (value) {
-        is String -> {
-            val bytes = value.encodeToByteArray()
-            if (needsToBeEscapedBytes(bytes)) {
-                buildString {
-                    append('\"')
-                    for (b in bytes) {
-                        fmtEscapedByte(this, b)
+    override fun toString(): String =
+        when (value) {
+            is String -> {
+                val bytes = value.encodeToByteArray()
+                if (needsToBeEscapedBytes(bytes)) {
+                    buildString {
+                        append('\"')
+                        for (b in bytes) {
+                            fmtEscapedByte(this, b)
+                        }
+                        append('\"')
                     }
-                    append('\"')
+                } else {
+                    value
                 }
-            } else {
-                value
             }
-        }
-        is ByteArray -> {
-            if (needsToBeEscapedBytes(value)) {
-                buildString {
-                    append('\"')
-                    for (b in value) {
-                        fmtEscapedByte(this, b)
+            is ByteArray -> {
+                if (needsToBeEscapedBytes(value)) {
+                    buildString {
+                        append('\"')
+                        for (b in value) {
+                            fmtEscapedByte(this, b)
+                        }
+                        append('\"')
                     }
-                    append('\"')
+                } else {
+                    value.decodeToString()
                 }
-            } else {
-                value.decodeToString()
             }
+            else -> value.toString()
         }
-        else -> value.toString()
-    }
 }
 
 /**
@@ -313,17 +317,23 @@ sealed class Line<out T> {
     /**
      * A line providing context in the diff which is present in both the old and new file
      */
-    data class Context<T>(val value: T) : Line<T>()
+    data class Context<T>(
+        val value: T,
+    ) : Line<T>()
 
     /**
      * A line deleted from the old file
      */
-    data class Delete<T>(val value: T) : Line<T>()
+    data class Delete<T>(
+        val value: T,
+    ) : Line<T>()
 
     /**
      * A line inserted to the new file
      */
-    data class Insert<T>(val value: T) : Line<T>()
+    data class Insert<T>(
+        val value: T,
+    ) : Line<T>()
 
     /**
      * Reverses the direction of this diff line.
@@ -332,9 +342,10 @@ sealed class Line<out T> {
      * * Insertions become deletions
      * * Deletions become insertions
      */
-    fun reverse(): Line<T> = when (this) {
-        is Context -> this
-        is Delete -> Insert(value)
-        is Insert -> Delete(value)
-    }
+    fun reverse(): Line<T> =
+        when (this) {
+            is Context -> this
+            is Delete -> Insert(value)
+            is Insert -> Delete(value)
+        }
 }

@@ -22,8 +22,11 @@ import kotlin.math.abs
 // on negative values. So instead `V` is represented as a light-weight wrapper around an IntArray
 // plus an `offset` which is the maximum value `k` can take on in order to map negative `k`'s back
 // to a value >= 0.
-internal class V(maxD: Int) {
+internal class V(
+    maxD: Int,
+) {
     val offset: Int = maxD
+
     // Look into initializing this to -1 and storing signed values
     val v: IntArray = IntArray(2 * maxD)
 
@@ -87,11 +90,12 @@ internal fun <S> findMiddleSnake(
         run {
             var k = d
             while (k >= -d) {
-                var x = if (k == -d || (k != d && vf[k - 1] < vf[k + 1])) {
-                    vf[k + 1]
-                } else {
-                    vf[k - 1] + 1
-                }
+                var x =
+                    if (k == -d || (k != d && vf[k - 1] < vf[k + 1])) {
+                        vf[k + 1]
+                    } else {
+                        vf[k - 1] + 1
+                    }
                 var y = x - k
 
                 // The coordinate of the start of a snake
@@ -114,12 +118,13 @@ internal fun <S> findMiddleSnake(
                     // TODO optimize this so we don't have to compare against n
                     if (vf[k] + vb[-(k - delta)] >= n) {
                         // Return the snake
-                        val snake = Snake(
-                            xStart = x0,
-                            yStart = y0,
-                            xEnd = x,
-                            yEnd = y,
-                        )
+                        val snake =
+                            Snake(
+                                xStart = x0,
+                                yStart = y0,
+                                xEnd = x,
+                                yEnd = y,
+                            )
                         // Edit distance to this snake is `2 * d - 1`
                         return (2 * d - 1) to snake
                     }
@@ -133,19 +138,22 @@ internal fun <S> findMiddleSnake(
         run {
             var k = d
             while (k >= -d) {
-                var x = if (k == -d || (k != d && vb[k - 1] < vb[k + 1])) {
-                    vb[k + 1]
-                } else {
-                    vb[k - 1] + 1
-                }
+                var x =
+                    if (k == -d || (k != d && vb[k - 1] < vb[k + 1])) {
+                        vb[k + 1]
+                    } else {
+                        vb[k - 1] + 1
+                    }
                 var y = x - k
 
                 // The coordinate of the start of a snake
                 val x0 = x
                 val y0 = y
                 if (x < n && y < m) {
-                    val advance = old.slice(RangeTo(n - x))
-                        .commonSuffixLen(new.slice(RangeTo(m - y)))
+                    val advance =
+                        old
+                            .slice(RangeTo(n - x))
+                            .commonSuffixLen(new.slice(RangeTo(m - y)))
                     x += advance
                     y += advance
                 }
@@ -157,12 +165,13 @@ internal fun <S> findMiddleSnake(
                     // TODO optimize this so we don't have to compare against n
                     if (vb[k] + vf[-(k - delta)] >= n) {
                         // Return the snake
-                        val snake = Snake(
-                            xStart = n - x,
-                            yStart = m - y,
-                            xEnd = n - x0,
-                            yEnd = m - y0,
-                        )
+                        val snake =
+                            Snake(
+                                xStart = n - x,
+                                yStart = m - y,
+                                xEnd = n - x0,
+                                yEnd = m - y0,
+                            )
                         // Edit distance to this snake is `2 * d`
                         return (2 * d) to snake
                     }
@@ -192,10 +201,11 @@ internal fun <S> conquer(
     // Check for common prefix
     val commonPrefixLen = old.commonPrefixLen(new)
     if (commonPrefixLen > 0) {
-        val commonPrefix = DiffRange.Equal(
-            old.slice(RangeTo(commonPrefixLen)),
-            new.slice(RangeTo(commonPrefixLen)),
-        )
+        val commonPrefix =
+            DiffRange.Equal(
+                old.slice(RangeTo(commonPrefixLen)),
+                new.slice(RangeTo(commonPrefixLen)),
+            )
         solution.add(commonPrefix)
     }
 
@@ -204,10 +214,11 @@ internal fun <S> conquer(
 
     // Check for common suffix
     val commonSuffixLen = old.commonSuffixLen(new)
-    val commonSuffix = DiffRange.Equal(
-        old.slice(RangeFrom(old.len() - commonSuffixLen)),
-        new.slice(RangeFrom(new.len() - commonSuffixLen)),
-    )
+    val commonSuffix =
+        DiffRange.Equal(
+            old.slice(RangeFrom(old.len() - commonSuffixLen)),
+            new.slice(RangeFrom(new.len() - commonSuffixLen)),
+        )
     old = old.slice(RangeTo(old.len() - commonSuffixLen))
     new = new.slice(RangeTo(new.len() - commonSuffixLen))
 

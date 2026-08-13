@@ -61,24 +61,25 @@ class PatchFormatter(
     /**
      * Returns a formatted string representation of a [Patch]
      */
-    fun fmtPatch(patch: Patch<String>): String = buildString {
-        if (patch.originalPath() != null || patch.modifiedPath() != null) {
-            patch.originalPath()?.let { original ->
-                append("--- ")
-                append(original.toString())
-                append('\n')
+    fun fmtPatch(patch: Patch<String>): String =
+        buildString {
+            if (patch.originalPath() != null || patch.modifiedPath() != null) {
+                patch.originalPath()?.let { original ->
+                    append("--- ")
+                    append(original.toString())
+                    append('\n')
+                }
+                patch.modifiedPath()?.let { modified ->
+                    append("+++ ")
+                    append(modified.toString())
+                    append('\n')
+                }
             }
-            patch.modifiedPath()?.let { modified ->
-                append("+++ ")
-                append(modified.toString())
-                append('\n')
-            }
-        }
 
-        for (hunk in patch.hunks()) {
-            append(fmtHunk(hunk))
+            for (hunk in patch.hunks()) {
+                append(fmtHunk(hunk))
+            }
         }
-    }
 
     /**
      * Formats a patch as bytes
@@ -104,88 +105,94 @@ class PatchFormatter(
         return sb.toString().encodeToByteArray()
     }
 
-    private fun fmtHunk(hunk: Hunk<String>): String = buildString {
-        append("@@ -")
-        append(hunk.oldRange().toString())
-        append(" +")
-        append(hunk.newRange().toString())
-        append(" @@")
+    private fun fmtHunk(hunk: Hunk<String>): String =
+        buildString {
+            append("@@ -")
+            append(hunk.oldRange().toString())
+            append(" +")
+            append(hunk.newRange().toString())
+            append(" @@")
 
-        hunk.functionContext()?.let { ctx ->
-            append(" ")
-            append(ctx)
-        }
-        append('\n')
-
-        for (line in hunk.lines()) {
-            append(fmtLine(line))
-        }
-    }
-
-    private fun fmtHunkBytes(hunk: Hunk<ByteArray>): String = buildString {
-        append("@@ -")
-        append(hunk.oldRange().toString())
-        append(" +")
-        append(hunk.newRange().toString())
-        append(" @@")
-
-        hunk.functionContext()?.let { ctx ->
-            append(" ")
-            append(ctx.decodeToString())
-        }
-        append('\n')
-
-        for (line in hunk.lines()) {
-            append(fmtLineBytes(line))
-        }
-    }
-
-    private fun fmtLine(line: Line<String>): String = buildString {
-        val (sign, content) = when (line) {
-            is Line.Context -> ' ' to line.value
-            is Line.Delete -> '-' to line.value
-            is Line.Insert -> '+' to line.value
-        }
-
-        if (suppressBlankEmpty && sign == ' ' && content == "\n") {
-            append(content)
-        } else {
-            append(sign)
-            append(content)
-        }
-
-        if (!content.endsWith('\n')) {
+            hunk.functionContext()?.let { ctx ->
+                append(" ")
+                append(ctx)
+            }
             append('\n')
-            if (withMissingNewlineMessage) {
-                append(NO_NEWLINE_AT_EOF)
-                append('\n')
+
+            for (line in hunk.lines()) {
+                append(fmtLine(line))
             }
         }
-    }
 
-    private fun fmtLineBytes(line: Line<ByteArray>): String = buildString {
-        val (sign, content) = when (line) {
-            is Line.Context -> ' ' to line.value
-            is Line.Delete -> '-' to line.value
-            is Line.Insert -> '+' to line.value
-        }
+    private fun fmtHunkBytes(hunk: Hunk<ByteArray>): String =
+        buildString {
+            append("@@ -")
+            append(hunk.oldRange().toString())
+            append(" +")
+            append(hunk.newRange().toString())
+            append(" @@")
 
-        val contentStr = content.decodeToString()
-        if (suppressBlankEmpty && sign == ' ' && contentStr == "\n") {
-            append(contentStr)
-        } else {
-            append(sign)
-            append(contentStr)
-        }
-
-        if (!contentStr.endsWith('\n')) {
+            hunk.functionContext()?.let { ctx ->
+                append(" ")
+                append(ctx.decodeToString())
+            }
             append('\n')
-            if (withMissingNewlineMessage) {
-                append(NO_NEWLINE_AT_EOF)
-                append('\n')
+
+            for (line in hunk.lines()) {
+                append(fmtLineBytes(line))
             }
         }
-    }
+
+    private fun fmtLine(line: Line<String>): String =
+        buildString {
+            val (sign, content) =
+                when (line) {
+                    is Line.Context -> ' ' to line.value
+                    is Line.Delete -> '-' to line.value
+                    is Line.Insert -> '+' to line.value
+                }
+
+            if (suppressBlankEmpty && sign == ' ' && content == "\n") {
+                append(content)
+            } else {
+                append(sign)
+                append(content)
+            }
+
+            if (!content.endsWith('\n')) {
+                append('\n')
+                if (withMissingNewlineMessage) {
+                    append(NO_NEWLINE_AT_EOF)
+                    append('\n')
+                }
+            }
+        }
+
+    private fun fmtLineBytes(line: Line<ByteArray>): String =
+        buildString {
+            val (sign, content) =
+                when (line) {
+                    is Line.Context -> ' ' to line.value
+                    is Line.Delete -> '-' to line.value
+                    is Line.Insert -> '+' to line.value
+                }
+
+            val contentStr = content.decodeToString()
+            if (suppressBlankEmpty && sign == ' ' && contentStr == "\n") {
+                append(contentStr)
+            } else {
+                append(sign)
+                append(contentStr)
+            }
+
+            if (!contentStr.endsWith('\n')) {
+                append('\n')
+                if (withMissingNewlineMessage) {
+                    append(NO_NEWLINE_AT_EOF)
+                    append('\n')
+                }
+            }
+        }
 
     companion object {
         /**

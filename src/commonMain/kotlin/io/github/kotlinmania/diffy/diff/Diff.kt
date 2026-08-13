@@ -1,18 +1,16 @@
 // port-lint: source src/diff/mod.rs
 package io.github.kotlinmania.diffy.diff
 
-import io.github.kotlinmania.diffy.Classifier
-import io.github.kotlinmania.diffy.StrTextLike
 import io.github.kotlinmania.diffy.ByteTextLike
+import io.github.kotlinmania.diffy.Classifier
+import io.github.kotlinmania.diffy.DiffRange
+import io.github.kotlinmania.diffy.Range
+import io.github.kotlinmania.diffy.RangeFull
+import io.github.kotlinmania.diffy.StrTextLike
 import io.github.kotlinmania.diffy.patch.Hunk
 import io.github.kotlinmania.diffy.patch.HunkRange
 import io.github.kotlinmania.diffy.patch.Line
 import io.github.kotlinmania.diffy.patch.Patch
-import io.github.kotlinmania.diffy.DiffRange
-import io.github.kotlinmania.diffy.StrSliceLike
-import io.github.kotlinmania.diffy.ByteSliceLike
-import io.github.kotlinmania.diffy.Range
-import io.github.kotlinmania.diffy.RangeFull
 import kotlin.math.min
 
 /**
@@ -48,27 +46,30 @@ class DiffOptions {
     /**
      * Set the number of context lines that should be used when producing a patch
      */
-    fun setContextLen(contextLen: Int): DiffOptions = apply {
-        this.contextLen = contextLen
-    }
+    fun setContextLen(contextLen: Int): DiffOptions =
+        apply {
+            this.contextLen = contextLen
+        }
 
     /**
      * Set the filename to be used in the patch for the original text
      *
      * If not set, the default value is "original".
      */
-    fun setOriginalFilename(filename: String): DiffOptions = apply {
-        this.originalFilename = filename
-    }
+    fun setOriginalFilename(filename: String): DiffOptions =
+        apply {
+            this.originalFilename = filename
+        }
 
     /**
      * Set the filename to be used in the patch for the modified text
      *
      * If not set, the default value is "modified".
      */
-    fun setModifiedFilename(filename: String): DiffOptions = apply {
-        this.modifiedFilename = filename
-    }
+    fun setModifiedFilename(filename: String): DiffOptions =
+        apply {
+            this.modifiedFilename = filename
+        }
 
     /**
      * Produce a Patch between two texts based on the configured options
@@ -116,11 +117,18 @@ class DiffOptions {
         val newRange = Range.new(ListSliceLike<T>(), newListWrapper, RangeFull)
 
         val solution = mutableListOf<DiffRange<List<T>>>()
-        val maxD = io.github.kotlinmania.diffy.diff.maxD(old.size, new.size)
-        val vf = io.github.kotlinmania.diffy.diff.V(maxD)
-        val vb = io.github.kotlinmania.diffy.diff.V(maxD)
+        val maxD =
+            io.github.kotlinmania.diffy.diff
+                .maxD(old.size, new.size)
+        val vf =
+            io.github.kotlinmania.diffy.diff
+                .V(maxD)
+        val vb =
+            io.github.kotlinmania.diffy.diff
+                .V(maxD)
 
-        io.github.kotlinmania.diffy.diff.conquer(oldRange, newRange, vf, vb, solution)
+        io.github.kotlinmania.diffy.diff
+            .conquer(oldRange, newRange, vf, vb, solution)
 
         if (compact) {
             compact(solution)
@@ -133,7 +141,9 @@ class DiffOptions {
 // SliceLike implementation for List<T> where items are comparable
 private class ListSliceLike<T> : io.github.kotlinmania.diffy.SliceLike<List<T>> {
     override fun len(value: List<T>): Int = value.size
+
     override fun empty(): List<T> = emptyList()
+
     override fun asSlice(value: List<T>, start: Int, endExclusive: Int): List<T> =
         value.subList(start, endExclusive)
 
@@ -206,13 +216,14 @@ private fun <T> toHunks(
         val start1 = (script.old.first - contextLen).coerceAtLeast(0)
         val start2 = (script.new.first - contextLen).coerceAtLeast(0)
 
-        var (end1, end2) = calcEnd(
-            contextLen,
-            lines1.size,
-            lines2.size,
-            script.old.last + 1,
-            script.new.last + 1,
-        )
+        var (end1, end2) =
+            calcEnd(
+                contextLen,
+                lines1.size,
+                lines2.size,
+                script.old.last + 1,
+                script.new.last + 1,
+            )
 
         val lines = mutableListOf<Line<T>>()
 
@@ -253,13 +264,14 @@ private fun <T> toHunks(
                     }
 
                     // Calc the new end
-                    val (e1, e2) = calcEnd(
-                        contextLen,
-                        lines1.size,
-                        lines2.size,
-                        s.old.last + 1,
-                        s.new.last + 1,
-                    )
+                    val (e1, e2) =
+                        calcEnd(
+                            contextLen,
+                            lines1.size,
+                            lines2.size,
+                            s.old.last + 1,
+                            s.new.last + 1,
+                        )
 
                     end1 = e1
                     end2 = e2
@@ -299,13 +311,14 @@ private fun calcEnd(
     script1End: Int,
     script2End: Int,
 ): Pair<Int, Int> {
-    val postContextLen = min(
-        contextLen,
+    val postContextLen =
         min(
-            text1Len - script1End,
-            text2Len - script2End,
-        ).coerceAtLeast(0),
-    )
+            contextLen,
+            min(
+                text1Len - script1End,
+                text2Len - script2End,
+            ).coerceAtLeast(0),
+        )
 
     val end1 = script1End + postContextLen
     val end2 = script2End + postContextLen
@@ -335,20 +348,22 @@ private fun buildEditScript(solution: List<DiffRange<*>>): List<EditRange> {
             }
             is DiffRange.Delete<*> -> {
                 val len = diff.range.len()
-                script = if (script != null) {
-                    script.copy(old = script.old.first until (script.old.last + 1 + len))
-                } else {
-                    EditRange(idxA until (idxA + len), idxB until idxB)
-                }
+                script =
+                    if (script != null) {
+                        script.copy(old = script.old.first until (script.old.last + 1 + len))
+                    } else {
+                        EditRange(idxA until (idxA + len), idxB until idxB)
+                    }
                 idxA += len
             }
             is DiffRange.Insert<*> -> {
                 val len = diff.range.len()
-                script = if (script != null) {
-                    script.copy(new = script.new.first until (script.new.last + 1 + len))
-                } else {
-                    EditRange(idxA until idxA, idxB until (idxB + len))
-                }
+                script =
+                    if (script != null) {
+                        script.copy(new = script.new.first until (script.new.last + 1 + len))
+                    } else {
+                        EditRange(idxA until idxA, idxB until (idxB + len))
+                    }
                 idxB += len
             }
         }
@@ -358,4 +373,3 @@ private fun buildEditScript(solution: List<DiffRange<*>>): List<EditRange> {
 
     return editScript
 }
-
