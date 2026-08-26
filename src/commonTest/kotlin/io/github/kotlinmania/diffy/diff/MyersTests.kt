@@ -11,7 +11,7 @@ class MyersTests {
     fun testFindMiddleSnake() {
         val a = Range.new(ByteSliceLike, "ABCABBA".encodeToByteArray(), RangeFull)
         val b = Range.new(ByteSliceLike, "CBABAC".encodeToByteArray(), RangeFull)
-        val maxD = maxD(a.len(), b.len())
+        val maxD = maxD(a.len, b.len)
         val vf = V(maxD)
         val vb = V(maxD)
         findMiddleSnake(a, b, vf, vb)

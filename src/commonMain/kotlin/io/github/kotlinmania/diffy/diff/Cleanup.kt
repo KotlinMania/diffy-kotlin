@@ -59,11 +59,11 @@ private fun <T> shiftDiffUp(
                                     DiffRange.Equal(
                                         prevDiff.left.slice(
                                             io.github.kotlinmania.diffy
-                                                .RangeFrom(prevDiff.left.len() - suffixLen),
+                                                .RangeFrom(prevDiff.left.len - suffixLen),
                                         ),
                                         thisDiff.range.slice(
                                             io.github.kotlinmania.diffy
-                                                .RangeFrom(thisDiff.range.len() - suffixLen),
+                                                .RangeFrom(thisDiff.range.len - suffixLen),
                                         ),
                                     ),
                                 )
@@ -114,11 +114,11 @@ private fun <T> shiftDiffUp(
                                     DiffRange.Equal(
                                         thisDiff.range.slice(
                                             io.github.kotlinmania.diffy
-                                                .RangeFrom(thisDiff.range.len() - suffixLen),
+                                                .RangeFrom(thisDiff.range.len - suffixLen),
                                         ),
                                         prevDiff.right.slice(
                                             io.github.kotlinmania.diffy
-                                                .RangeFrom(prevDiff.right.len() - suffixLen),
+                                                .RangeFrom(prevDiff.right.len - suffixLen),
                                         ),
                                     ),
                                 )

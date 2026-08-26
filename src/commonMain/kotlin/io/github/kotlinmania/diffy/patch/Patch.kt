@@ -286,11 +286,6 @@ data class HunkRange(
     fun end(): Int = start + len
 
     /**
-     * Returns the number of lines in the range
-     */
-    fun len(): Int = len
-
-    /**
      * Returns `true` if the range is empty (has a length of `0`)
      */
     fun isEmpty(): Boolean = len == 0

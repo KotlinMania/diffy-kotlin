@@ -211,15 +211,14 @@ fun installProjectAndroidSdk(execOperations: ExecOperations) {
 
 writeAndroidLocalProperties()
 
-val ensureAndroidSdk =
-    tasks.register("ensureAndroidSdk") {
-        group = "setup"
-        description = "Ensures the project-local Android SDK is installed (idempotent)."
-        onlyIf("Android SDK already installed at $projectAndroidSdkDir") { !isProjectAndroidSdkInstalled() }
-        doLast {
-            installProjectAndroidSdk(serviceOf())
-        }
+val ensureAndroidSdk by tasks.registering {
+    group = "setup"
+    description = "Ensures the project-local Android SDK is installed (idempotent)."
+    onlyIf("Android SDK already installed at $projectAndroidSdkDir") { !isProjectAndroidSdkInstalled() }
+    doLast {
+        installProjectAndroidSdk(serviceOf())
     }
+}
 
 tasks.matching { it.name == "compileAndroidMain" }.configureEach {
     dependsOn(ensureAndroidSdk)
@@ -450,13 +449,13 @@ rootProject.extensions.configure<YarnRootEnvSpec>("kotlinYarnSpec") { version.se
 rootProject.extensions.configure<WasmYarnRootEnvSpec>("kotlinWasmYarnSpec") { version.set(wasmYarnVersion) }
 
 rootProject.extensions.configure<YarnRootExtension>("kotlinYarn") {
-    providers
-        .gradlePropertiesPrefixedBy("yarn.resolution.")
-        .get()
+    project.properties
+        .filterKeys { it.startsWith("yarn.resolution.") }
         .forEach { (key, value) ->
             val pkg = key.removePrefix("yarn.resolution.")
-            resolution(pkg, value)
-            resolution("**/$pkg", value)
+            val ver = value as? String ?: return@forEach
+            resolution(pkg, ver)
+            resolution("**/$pkg", ver)
         }
     // webpack resolution sourced from kotlin-js-store/package.json (see above)
     // rather than a yarn.resolution.webpack property, so it can never override a
@@ -524,7 +523,15 @@ mavenPublishing {
 
 // ============================================================================
 // Tasks
-// ============================================================================
+// Exact test lifecycle task. Without this, ./gradlew test is ambiguous between
+// Android test task names. This runs commonTest through the KMP allTests
+// lifecycle and adds the Android host + Swift Export parity tests.
+tasks.register("test") {
+    group = "verification"
+    description = "Runs the commonTest-backed KMP suite, Android host tests, and Swift Export smoke test."
+    dependsOn("hostTests")
+    dependsOn("swiftExportSmokeTest")
+}
 
 tasks.register("setupAndroidSdk") {
     group = "setup"
