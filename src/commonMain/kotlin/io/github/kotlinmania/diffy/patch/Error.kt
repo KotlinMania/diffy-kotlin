@@ -2,17 +2,27 @@
 package io.github.kotlinmania.diffy.patch
 
 /**
+ * A byte range in a patch input.
+ */
+data class PatchSpan(
+    val start: Int,
+    val endInclusive: Int,
+) {
+    fun toIntRange(): IntRange = start..endInclusive
+}
+
+/**
  * An error returned when parsing a [Patch] using [Patch.fromStr] fails.
  */
 @ConsistentCopyVisibility
 data class ParsePatchError internal constructor(
     internal val kind: ParsePatchErrorKind,
-    val span: IntRange?,
+    val span: PatchSpan?,
 ) : Exception() {
     override val message: String
         get() =
             if (span != null) {
-                "error parsing patch at byte ${span.first}: $kind"
+                "error parsing patch at byte ${span.start}: $kind"
             } else {
                 "error parsing patch: $kind"
             }
@@ -21,7 +31,7 @@ data class ParsePatchError internal constructor(
 
     companion object {
         internal fun new(kind: ParsePatchErrorKind, span: IntRange): ParsePatchError =
-            ParsePatchError(kind, span)
+            ParsePatchError(kind, PatchSpan(span.first, span.last))
 
         internal fun new(kind: ParsePatchErrorKind): ParsePatchError =
             ParsePatchError(kind, null)

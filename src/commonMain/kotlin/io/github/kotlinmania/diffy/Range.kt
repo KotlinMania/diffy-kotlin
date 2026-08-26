@@ -12,12 +12,6 @@ class Range<T>(
 ) {
     fun isEmpty(): Boolean = len == 0
 
-    fun inner(): T = inner
-
-    fun len(): Int = len
-
-    fun offset(): Int = offset
-
     fun range(): IntRange = offset until offset + len
 
     fun growUp(adjust: Int) {
@@ -331,7 +325,7 @@ sealed class DiffRange<T> {
 
     fun isEmpty(): Boolean = inner().isEmpty()
 
-    fun len(): Int = inner().len()
+    fun len(): Int = inner().len
 
     fun growUp(adjust: Int) = forEach { it.growUp(adjust) }
 
@@ -392,10 +386,10 @@ fun DiffRange<ByteArray>.toStr(text1: String, text2: String): DiffRange<String> 
 
     return when (this) {
         is DiffRange.Equal -> {
-            var offset1 = left.offset()
-            var len1 = left.len()
-            var offset2 = right.offset()
-            var len2 = right.len()
+            var offset1 = left.offset
+            var len1 = left.len
+            var offset2 = right.offset
+            var len2 = right.len
 
             val adjustUp = boundaryUp(text1, offset1)
             offset1 += adjustUp
@@ -417,8 +411,8 @@ fun DiffRange<ByteArray>.toStr(text1: String, text2: String): DiffRange<String> 
             )
         }
         is DiffRange.Delete -> {
-            var offset = range.offset()
-            var len = range.len()
+            var offset = range.offset
+            var len = range.len
             val adjustDown = boundaryDown(text1, offset)
             offset -= adjustDown
             len += adjustDown
@@ -429,8 +423,8 @@ fun DiffRange<ByteArray>.toStr(text1: String, text2: String): DiffRange<String> 
             DiffRange.Delete(Range(StrSliceLike, text1, charOffset, charLen))
         }
         is DiffRange.Insert -> {
-            var offset = range.offset()
-            var len = range.len()
+            var offset = range.offset
+            var len = range.len
             val adjustDown = boundaryDown(text2, offset)
             offset -= adjustDown
             len += adjustDown

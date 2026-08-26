@@ -341,13 +341,13 @@ private fun buildEditScript(solution: List<DiffRange<*>>): List<EditRange> {
     for (diff in solution) {
         when (diff) {
             is DiffRange.Equal<*> -> {
-                idxA += diff.left.len()
-                idxB += diff.right.len()
+                idxA += diff.left.len
+                idxB += diff.right.len
                 script?.let { editScript.add(it) }
                 script = null
             }
             is DiffRange.Delete<*> -> {
-                val len = diff.range.len()
+                val len = diff.range.len
                 script =
                     if (script != null) {
                         script.copy(old = script.old.first until (script.old.last + 1 + len))
@@ -357,7 +357,7 @@ private fun buildEditScript(solution: List<DiffRange<*>>): List<EditRange> {
                 idxA += len
             }
             is DiffRange.Insert<*> -> {
-                val len = diff.range.len()
+                val len = diff.range.len
                 script =
                     if (script != null) {
                         script.copy(new = script.new.first until (script.new.last + 1 + len))

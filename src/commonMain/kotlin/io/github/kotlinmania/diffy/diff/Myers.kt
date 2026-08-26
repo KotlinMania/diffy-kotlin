@@ -66,8 +66,8 @@ internal fun <S> findMiddleSnake(
     vf: V,
     vb: V,
 ): Pair<Int, Snake> {
-    val n = old.len()
-    val m = new.len()
+    val n = old.len
+    val m = new.len
 
     // By Lemma 1 in the paper, the optimal edit script length is odd or even as `delta` is odd
     // or even.
@@ -209,18 +209,18 @@ internal fun <S> conquer(
         solution.add(commonPrefix)
     }
 
-    old = old.slice(RangeStartEnd(commonPrefixLen, old.len()))
-    new = new.slice(RangeStartEnd(commonPrefixLen, new.len()))
+    old = old.slice(RangeStartEnd(commonPrefixLen, old.len))
+    new = new.slice(RangeStartEnd(commonPrefixLen, new.len))
 
     // Check for common suffix
     val commonSuffixLen = old.commonSuffixLen(new)
     val commonSuffix =
         DiffRange.Equal(
-            old.slice(RangeFrom(old.len() - commonSuffixLen)),
-            new.slice(RangeFrom(new.len() - commonSuffixLen)),
+            old.slice(RangeFrom(old.len - commonSuffixLen)),
+            new.slice(RangeFrom(new.len - commonSuffixLen)),
         )
-    old = old.slice(RangeTo(old.len() - commonSuffixLen))
-    new = new.slice(RangeTo(new.len() - commonSuffixLen))
+    old = old.slice(RangeTo(old.len - commonSuffixLen))
+    new = new.slice(RangeTo(new.len - commonSuffixLen))
 
     if (old.isEmpty() && new.isEmpty()) {
         // Do nothing
