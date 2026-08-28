@@ -5,9 +5,9 @@ Based on AST analysis, here are the concrete next steps.
 ## Summary
 
 - **Files Present:** 9/13 (69.2%)
-- **Function parity:** 104/179 matched (target 208) — 58.1%
+- **Function parity:** 102/179 matched (target 204) — 57.0%
 - **Class/type parity:** 17/31 matched (target 39) — 54.8%
-- **Combined symbol parity:** 121/210 matched (target 247) — 57.6%
+- **Combined symbol parity:** 119/210 matched (target 243) — 56.7%
 - **Average inline-code cosine:** 0.07 (function body across 4 matched files)
 - **Average documentation cosine:** 0.37 (doc text across 4 matched files)
 - **Cheat-zeroed Files:** 8
@@ -76,9 +76,9 @@ Every matched file is listed below with function and type symbol parity.
 - **Target:** `patch.Patch [STUB] [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.00
 - **Dependents:** 0
-- **Priority Score:** 73110.0
-- **Functions:** 19/25 matched (target 32)
-- **Missing functions:** `to_bytes`, `clone`, `fmt`, `needs_to_be_escaped`, `as_ref`, `deref`
+- **Priority Score:** 83110.0
+- **Functions:** 18/25 matched (target 31)
+- **Missing functions:** `to_bytes`, `clone`, `fmt`, `needs_to_be_escaped`, `as_ref`, `deref`, `len`
 - **Types:** 5/6 matched (target 8)
 - **Missing types:** `Target`
 - **Provenance warning:** port-lint provenance header matched only after fallback normalization: `src/patch/mod.rs` vs expected `patch/mod.rs`
@@ -122,9 +122,9 @@ Every matched file is listed below with function and type symbol parity.
 - **Target:** `diffy.Range [ZERO]`
 - **Similarity:** 0.00
 - **Dependents:** 0
-- **Priority Score:** 3610.0
-- **Functions:** 32/32 matched (target 72)
-- **Missing functions:** _none_
+- **Priority Score:** 13610.0
+- **Functions:** 31/32 matched (target 69)
+- **Missing functions:** `offset`
 - **Types:** 4/4 matched (target 14)
 - **Missing types:** _none_
 - **Tests:** 3/3 matched
