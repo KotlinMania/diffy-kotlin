@@ -1,7 +1,9 @@
-// port-lint: source src/diff/cleanup.rs
+// port-lint: source diff/cleanup.rs
 package io.github.kotlinmania.diffy.diff
 
 import io.github.kotlinmania.diffy.DiffRange
+import io.github.kotlinmania.diffy.RangeFrom
+import io.github.kotlinmania.diffy.RangeTo
 
 // Walks through all edits and shifts them up and then down, trying to see if they run into similar
 // edits which can be merged
@@ -9,18 +11,19 @@ internal fun <T> compact(diffs: MutableList<DiffRange<T>>) {
     // First attempt to compact all Deletions
     var pointer = 0
     while (pointer < diffs.size) {
-        if (diffs[pointer] is DiffRange.Delete) {
+        val diff = diffs[pointer]
+        if (diff is DiffRange.Delete) {
             pointer = shiftDiffUp(diffs, pointer)
             pointer = shiftDiffDown(diffs, pointer)
         }
         pointer += 1
     }
 
-    // TODO maybe able to merge these and do them in the same pass?
     // Then attempt to compact all Insertions
     pointer = 0
     while (pointer < diffs.size) {
-        if (diffs[pointer] is DiffRange.Insert) {
+        val diff = diffs[pointer]
+        if (diff is DiffRange.Insert) {
             pointer = shiftDiffUp(diffs, pointer)
             pointer = shiftDiffDown(diffs, pointer)
         }
@@ -34,124 +37,102 @@ private fun <T> shiftDiffUp(
     initialPointer: Int,
 ): Int {
     var pointer = initialPointer
-    while (true) {
-        val prevIndex = pointer - 1
-        if (prevIndex < 0) break
+    while (pointer > 0) {
+        val prevDiff = diffs[pointer - 1]
+        val thisDiff = diffs[pointer]
 
-        val prevDiff = diffs.getOrNull(prevIndex) ?: break
-
-        when (val thisDiff = diffs[pointer]) {
-            //
-            // Shift Inserts Upwards
-            //
+        when (thisDiff) {
             is DiffRange.Insert ->
                 when (prevDiff) {
                     is DiffRange.Equal -> {
-                        // check common suffix for the amount we can shift
-                        val suffixLen = thisDiff.range.commonSuffixLen(prevDiff.left)
+                        val prevDiff1 = prevDiff.left
+                        val thisRange = thisDiff.range
+                        val suffixLen = thisRange.commonSuffixLen(prevDiff1)
                         if (suffixLen != 0) {
-                            val nextIndex = pointer + 1
-                            if (diffs.getOrNull(nextIndex) is DiffRange.Equal) {
-                                diffs[nextIndex].growUp(suffixLen)
+                            if (pointer + 1 < diffs.size && diffs[pointer + 1] is DiffRange.Equal) {
+                                diffs[pointer + 1].growUp(suffixLen)
                             } else {
                                 diffs.add(
-                                    nextIndex,
+                                    pointer + 1,
                                     DiffRange.Equal(
-                                        prevDiff.left.slice(
-                                            io.github.kotlinmania.diffy
-                                                .RangeFrom(prevDiff.left.len - suffixLen),
-                                        ),
-                                        thisDiff.range.slice(
-                                            io.github.kotlinmania.diffy
-                                                .RangeFrom(thisDiff.range.len - suffixLen),
-                                        ),
+                                        prevDiff1.slice(RangeFrom(prevDiff1.len - suffixLen)),
+                                        thisRange.slice(RangeFrom(thisRange.len - suffixLen)),
                                     ),
                                 )
                             }
                             diffs[pointer].shiftUp(suffixLen)
-                            diffs[prevIndex].shrinkBack(suffixLen)
+                            diffs[pointer - 1].shrinkBack(suffixLen)
 
-                            if (diffs[prevIndex].isEmpty()) {
-                                diffs.removeAt(prevIndex)
+                            if (diffs[pointer - 1].isEmpty()) {
+                                diffs.removeAt(pointer - 1)
                                 pointer -= 1
                             }
-                        } else if (diffs[prevIndex].isEmpty()) {
-                            diffs.removeAt(prevIndex)
+                        } else if (diffs[pointer - 1].isEmpty()) {
+                            diffs.removeAt(pointer - 1)
                             pointer -= 1
                         } else {
-                            // We can't shift upwards anymore
                             break
                         }
                     }
                     is DiffRange.Insert -> {
-                        // Merge the two ranges
-                        diffs[prevIndex].growDown(thisDiff.len())
+                        diffs[pointer - 1].growDown(thisDiff.len())
                         diffs.removeAt(pointer)
                         pointer -= 1
                     }
                     is DiffRange.Delete -> {
-                        // Swap the Delete and Insert
-                        diffs[prevIndex] = diffs[pointer].also { diffs[pointer] = diffs[prevIndex] }
+                        val temp = diffs[pointer - 1]
+                        diffs[pointer - 1] = diffs[pointer]
+                        diffs[pointer] = temp
                         pointer -= 1
                     }
                 }
 
-            //
-            // Shift Deletions Upwards
-            //
             is DiffRange.Delete ->
                 when (prevDiff) {
                     is DiffRange.Equal -> {
-                        // check common suffix for the amount we can shift
-                        val suffixLen = thisDiff.range.commonSuffixLen(prevDiff.right)
+                        val prevDiff2 = prevDiff.right
+                        val thisRange = thisDiff.range
+                        val suffixLen = thisRange.commonSuffixLen(prevDiff2)
                         if (suffixLen != 0) {
-                            val nextIndex = pointer + 1
-                            if (diffs.getOrNull(nextIndex) is DiffRange.Equal) {
-                                diffs[nextIndex].growUp(suffixLen)
+                            if (pointer + 1 < diffs.size && diffs[pointer + 1] is DiffRange.Equal) {
+                                diffs[pointer + 1].growUp(suffixLen)
                             } else {
                                 diffs.add(
-                                    nextIndex,
+                                    pointer + 1,
                                     DiffRange.Equal(
-                                        thisDiff.range.slice(
-                                            io.github.kotlinmania.diffy
-                                                .RangeFrom(thisDiff.range.len - suffixLen),
-                                        ),
-                                        prevDiff.right.slice(
-                                            io.github.kotlinmania.diffy
-                                                .RangeFrom(prevDiff.right.len - suffixLen),
-                                        ),
+                                        thisRange.slice(RangeFrom(thisRange.len - suffixLen)),
+                                        prevDiff2.slice(RangeFrom(prevDiff2.len - suffixLen)),
                                     ),
                                 )
                             }
                             diffs[pointer].shiftUp(suffixLen)
-                            diffs[prevIndex].shrinkBack(suffixLen)
+                            diffs[pointer - 1].shrinkBack(suffixLen)
 
-                            if (diffs[prevIndex].isEmpty()) {
-                                diffs.removeAt(prevIndex)
+                            if (diffs[pointer - 1].isEmpty()) {
+                                diffs.removeAt(pointer - 1)
                                 pointer -= 1
                             }
-                        } else if (diffs[prevIndex].isEmpty()) {
-                            diffs.removeAt(prevIndex)
+                        } else if (diffs[pointer - 1].isEmpty()) {
+                            diffs.removeAt(pointer - 1)
                             pointer -= 1
                         } else {
-                            // We can't shift upwards anymore
                             break
                         }
                     }
                     is DiffRange.Delete -> {
-                        // Merge the two ranges
-                        diffs[prevIndex].growDown(thisDiff.len())
+                        diffs[pointer - 1].growDown(thisDiff.len())
                         diffs.removeAt(pointer)
                         pointer -= 1
                     }
                     is DiffRange.Insert -> {
-                        // Swap the Delete and Insert
-                        diffs[prevIndex] = diffs[pointer].also { diffs[pointer] = diffs[prevIndex] }
+                        val temp = diffs[pointer - 1]
+                        diffs[pointer - 1] = diffs[pointer]
+                        diffs[pointer] = temp
                         pointer -= 1
                     }
                 }
 
-            is DiffRange.Equal -> error("range to shift must be either Insert or Delete")
+            is DiffRange.Equal -> throw IllegalStateException("range to shift must be either Insert or Delete")
         }
     }
 
@@ -164,120 +145,100 @@ private fun <T> shiftDiffDown(
     initialPointer: Int,
 ): Int {
     var pointer = initialPointer
-    while (true) {
-        val nextIndex = pointer + 1
-        val nextDiff = diffs.getOrNull(nextIndex) ?: break
+    while (pointer + 1 < diffs.size) {
+        val thisDiff = diffs[pointer]
+        val nextDiff = diffs[pointer + 1]
 
-        when (val thisDiff = diffs[pointer]) {
-            //
-            // Shift Insert Downward
-            //
+        when (thisDiff) {
             is DiffRange.Insert ->
                 when (nextDiff) {
                     is DiffRange.Equal -> {
-                        // check common prefix for the amount we can shift
-                        val prefixLen = thisDiff.range.commonPrefixLen(nextDiff.left)
+                        val nextDiff1 = nextDiff.left
+                        val thisRange = thisDiff.range
+                        val prefixLen = thisRange.commonPrefixLen(nextDiff1)
                         if (prefixLen != 0) {
-                            val prevIndex = pointer - 1
-                            if (diffs.getOrNull(prevIndex) is DiffRange.Equal) {
-                                diffs[prevIndex].growDown(prefixLen)
+                            if (pointer > 0 && diffs[pointer - 1] is DiffRange.Equal) {
+                                diffs[pointer - 1].growDown(prefixLen)
                             } else {
                                 diffs.add(
                                     pointer,
                                     DiffRange.Equal(
-                                        nextDiff.left.slice(
-                                            io.github.kotlinmania.diffy
-                                                .RangeTo(prefixLen),
-                                        ),
-                                        thisDiff.range.slice(
-                                            io.github.kotlinmania.diffy
-                                                .RangeTo(prefixLen),
-                                        ),
+                                        nextDiff1.slice(RangeTo(prefixLen)),
+                                        thisRange.slice(RangeTo(prefixLen)),
                                     ),
                                 )
                                 pointer += 1
                             }
 
                             diffs[pointer].shiftDown(prefixLen)
-                            diffs[nextIndex].shrinkFront(prefixLen)
+                            diffs[pointer + 1].shrinkFront(prefixLen)
 
-                            if (diffs[nextIndex].isEmpty()) {
-                                diffs.removeAt(nextIndex)
+                            if (diffs[pointer + 1].isEmpty()) {
+                                diffs.removeAt(pointer + 1)
                             }
-                        } else if (diffs[nextIndex].isEmpty()) {
-                            diffs.removeAt(nextIndex)
+                        } else if (diffs[pointer + 1].isEmpty()) {
+                            diffs.removeAt(pointer + 1)
                         } else {
-                            // We can't shift downwards anymore
                             break
                         }
                     }
-                    is DiffRange.Insert -> {
-                        // Merge the two ranges
-                        diffs[pointer].growDown(nextDiff.len())
-                        diffs.removeAt(nextIndex)
-                    }
                     is DiffRange.Delete -> {
-                        // Swap the Delete and Insert
-                        diffs[pointer] = diffs[nextIndex].also { diffs[nextIndex] = diffs[pointer] }
+                        val temp = diffs[pointer]
+                        diffs[pointer] = diffs[pointer + 1]
+                        diffs[pointer + 1] = temp
                         pointer += 1
+                    }
+                    is DiffRange.Insert -> {
+                        diffs[pointer].growDown(nextDiff.len())
+                        diffs.removeAt(pointer + 1)
                     }
                 }
 
-            //
-            // Shift Deletion Downward
-            //
             is DiffRange.Delete ->
                 when (nextDiff) {
                     is DiffRange.Equal -> {
-                        // check common prefix for the amount we can shift
-                        val prefixLen = thisDiff.range.commonPrefixLen(nextDiff.right)
+                        val nextDiff2 = nextDiff.right
+                        val thisRange = thisDiff.range
+                        val prefixLen = thisRange.commonPrefixLen(nextDiff2)
                         if (prefixLen != 0) {
-                            val prevIndex = pointer - 1
-                            if (diffs.getOrNull(prevIndex) is DiffRange.Equal) {
-                                diffs[prevIndex].growDown(prefixLen)
+                            if (pointer > 0 && diffs[pointer - 1] is DiffRange.Equal) {
+                                diffs[pointer - 1].growDown(prefixLen)
                             } else {
                                 diffs.add(
                                     pointer,
                                     DiffRange.Equal(
-                                        thisDiff.range.slice(
-                                            io.github.kotlinmania.diffy
-                                                .RangeTo(prefixLen),
-                                        ),
-                                        nextDiff.right.slice(
-                                            io.github.kotlinmania.diffy
-                                                .RangeTo(prefixLen),
-                                        ),
+                                        thisRange.slice(RangeTo(prefixLen)),
+                                        nextDiff2.slice(RangeTo(prefixLen)),
                                     ),
                                 )
                                 pointer += 1
                             }
 
                             diffs[pointer].shiftDown(prefixLen)
-                            diffs[nextIndex].shrinkFront(prefixLen)
+                            diffs[pointer + 1].shrinkFront(prefixLen)
 
-                            if (diffs[nextIndex].isEmpty()) {
-                                diffs.removeAt(nextIndex)
+                            if (diffs[pointer + 1].isEmpty()) {
+                                diffs.removeAt(pointer + 1)
                             }
-                        } else if (diffs[nextIndex].isEmpty()) {
-                            diffs.removeAt(nextIndex)
+                        } else if (diffs[pointer + 1].isEmpty()) {
+                            diffs.removeAt(pointer + 1)
                         } else {
-                            // We can't shift downwards anymore
                             break
                         }
                     }
-                    is DiffRange.Delete -> {
-                        // Merge the two ranges
-                        diffs[pointer].growDown(nextDiff.len())
-                        diffs.removeAt(nextIndex)
-                    }
                     is DiffRange.Insert -> {
-                        // Swap the Delete and Insert
-                        diffs[pointer] = diffs[nextIndex].also { diffs[nextIndex] = diffs[pointer] }
+                        val temp = diffs[pointer]
+                        diffs[pointer] = diffs[pointer + 1]
+                        diffs[pointer + 1] = temp
                         pointer += 1
+                    }
+                    is DiffRange.Delete -> {
+                        diffs[pointer].growDown(nextDiff.len())
+                        diffs.removeAt(pointer + 1)
                     }
                 }
 
-            is DiffRange.Equal -> error("range to shift must be either Insert or Delete")
+            is DiffRange.Equal -> throw IllegalStateException("range to shift must be either Insert or Delete")
         }
     }
 

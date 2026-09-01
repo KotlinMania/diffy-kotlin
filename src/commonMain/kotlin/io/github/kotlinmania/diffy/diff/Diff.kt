@@ -1,4 +1,4 @@
-// port-lint: source src/diff/mod.rs
+// port-lint: source diff/mod.rs
 package io.github.kotlinmania.diffy.diff
 
 import io.github.kotlinmania.diffy.ByteTextLike
@@ -11,31 +11,20 @@ import io.github.kotlinmania.diffy.patch.Hunk
 import io.github.kotlinmania.diffy.patch.HunkRange
 import io.github.kotlinmania.diffy.patch.Line
 import io.github.kotlinmania.diffy.patch.Patch
+import io.github.kotlinmania.diffy.toStr
 import kotlin.math.min
 
 /**
+ * An individual diff element.
+ */
+sealed class Diff<T> {
+    data class Equal<T>(val value: T) : Diff<T>()
+    data class Delete<T>(val value: T) : Diff<T>()
+    data class Insert<T>(val value: T) : Diff<T>()
+}
+
+/**
  * A collection of options for modifying the way a diff is performed
- *
- * Example:
- * ```kotlin
- * val options = DiffOptions()
- *     .setContextLen(1)
- *     .setOriginalFilename("before.txt")
- *     .setModifiedFilename("after.txt")
- *
- * val patch = options.createPatch(
- *     """
- *     alpha
- *     beta
- *     gamma
- *     """.trimIndent(),
- *     """
- *     alpha
- *     BETA
- *     gamma
- *     """.trimIndent()
- * )
- * ```
  */
 class DiffOptions {
     private var compact: Boolean = true
@@ -49,6 +38,25 @@ class DiffOptions {
     fun setContextLen(contextLen: Int): DiffOptions =
         apply {
             this.contextLen = contextLen
+        }
+
+    /**
+     * Enable/Disable diff compaction. Compaction is a post-processing step which attempts to
+     * produce a prettier diff by reducing the number of edited blocks by shifting and merging
+     * edit blocks.
+     */
+    fun setCompact(compact: Boolean): DiffOptions =
+        apply {
+            this.compact = compact
+        }
+
+    /**
+     * Set the filename to be used in the patch for the original and modified text
+     */
+    fun setOriginalAndModifiedFilenames(original: String, modified: String): DiffOptions =
+        apply {
+            this.originalFilename = original
+            this.modifiedFilename = modified
         }
 
     /**
@@ -70,6 +78,36 @@ class DiffOptions {
         apply {
             this.modifiedFilename = filename
         }
+
+    /**
+     * Generate diff elements between original and modified strings
+     */
+    fun diff(original: String, modified: String): List<Diff<String>> {
+        val solution = io.github.kotlinmania.diffy.diff.diff(
+            io.github.kotlinmania.diffy.ByteSliceLike,
+            original.encodeToByteArray(),
+            modified.encodeToByteArray(),
+        )
+
+        val strSolution = solution.map { it.toStr(original, modified) }.toMutableList()
+
+        if (compact) {
+            compact(strSolution)
+        }
+
+        return strSolution.map { diffRange ->
+            when (diffRange) {
+                is DiffRange.Equal -> Diff.Equal(diffRange.left.asSlice())
+                is DiffRange.Delete -> Diff.Delete(diffRange.range.asSlice())
+                is DiffRange.Insert -> Diff.Insert(diffRange.range.asSlice())
+            }
+        }
+    }
+
+    companion object {
+        fun new(): DiffOptions = DiffOptions()
+        fun default(): DiffOptions = DiffOptions()
+    }
 
     /**
      * Produce a Patch between two texts based on the configured options
@@ -187,6 +225,12 @@ private class ListSliceLike<T> : io.github.kotlinmania.diffy.SliceLike<List<T>> 
         return true
     }
 }
+
+/**
+ * Create a diff between two texts.
+ */
+fun diff(original: String, modified: String): List<Diff<String>> =
+    DiffOptions.default().diff(original, modified)
 
 /**
  * Create a patch between two texts.

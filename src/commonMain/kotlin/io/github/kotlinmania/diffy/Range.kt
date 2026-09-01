@@ -92,7 +92,7 @@ interface RangeBounds {
     fun tryIndex(len: Int): Pair<Int, Int>?
 
     fun index(len: Int): Pair<Int, Int> =
-        tryIndex(len) ?: error("index out of range, index=$this, len=$len")
+        tryIndex(len) ?: throw IndexOutOfBoundsException("index out of range, index=$this, len=$len")
 }
 
 data class RangeStartEnd(

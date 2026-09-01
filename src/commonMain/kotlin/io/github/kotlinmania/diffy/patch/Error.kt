@@ -1,4 +1,4 @@
-// port-lint: source src/patch/error.rs
+// port-lint: source patch/parse.rs
 package io.github.kotlinmania.diffy.patch
 
 /**

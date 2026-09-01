@@ -1,4 +1,4 @@
-// port-lint: source src/diff/myers.rs
+// port-lint: tests diff/myers.rs
 package io.github.kotlinmania.diffy.diff
 
 import io.github.kotlinmania.diffy.ByteSliceLike

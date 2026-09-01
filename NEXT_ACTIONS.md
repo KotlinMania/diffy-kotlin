@@ -4,14 +4,14 @@ Based on AST analysis, here are the concrete next steps.
 
 ## Summary
 
-- **Files Present:** 9/13 (69.2%)
-- **Function parity:** 102/179 matched (target 204) — 57.0%
-- **Class/type parity:** 17/31 matched (target 39) — 54.8%
-- **Combined symbol parity:** 119/210 matched (target 243) — 56.7%
-- **Average inline-code cosine:** 0.07 (function body across 4 matched files)
-- **Average documentation cosine:** 0.37 (doc text across 4 matched files)
-- **Cheat-zeroed Files:** 8
-- **Critical Issues:** 9 files with <0.60 function similarity
+- **Files Present:** 13/13 (100.0%)
+- **Function parity:** 148/197 matched (target 279) — 75.1%
+- **Class/type parity:** 25/35 matched (target 99) — 71.4%
+- **Combined symbol parity:** 173/232 matched (target 378) — 74.6%
+- **Average inline-code cosine:** 0.55 (function body across 10 matched files)
+- **Average documentation cosine:** 0.20 (doc text across 10 matched files)
+- **Cheat-zeroed Files:** 3
+- **Critical Issues:** 10 files with <0.60 function similarity
 
 ## Priority 1: Fix Incomplete High-Dependency Files
 
@@ -29,133 +29,152 @@ Every matched file is listed below with function and type symbol parity.
 
 ### 1. patch.parse
 
-- **Target:** `patch.Parse [PROVENANCE-FALLBACK]`
-- **Similarity:** 0.27
+- **Target:** `patch.Error`
+- **Similarity:** 0.29
 - **Dependents:** 0
-- **Priority Score:** 142607.3
-- **Functions:** 11/23 matched (target 24)
-- **Missing functions:** `new`, `fmt`, `convert_cow_to_str`, `patch_header`, `parse_filename`, `is_quoted`, `unescaped_filename`, `escaped_filename`, `range`, `test_escaped_filenames`, `test_missing_filename_header`, `adjacent_hunks_correctly_parse`
-- **Types:** 1/3 matched
-- **Missing types:** `Result`, `ParsePatchError`
+- **Priority Score:** 122607.1
+- **Functions:** 12/23 matched (target 29)
+- **Missing functions:** `fmt`, `convert_cow_to_str`, `patch_header`, `parse_filename`, `is_quoted`, `unescaped_filename`, `escaped_filename`, `range`, `test_escaped_filenames`, `test_missing_filename_header`, `adjacent_hunks_correctly_parse`
+- **Types:** 2/3 matched (target 28)
+- **Missing types:** `Result`
 - **Tests:** 0/3 matched
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `src/patch/parse.rs` vs expected `patch/parse.rs`
-- **Proposed provenance header:** `// port-lint: source patch/parse.rs` (current: `// port-lint: source src/patch/parse.rs`)
-- **Lint issues:** 1
 
 ### 2. patch.format
 
-- **Target:** `patch.PatchFormatter [ZERO] [PROVENANCE-FALLBACK]`
-- **Similarity:** 0.00
+- **Target:** `patch.PatchFormatter`
+- **Similarity:** 0.22
 - **Dependents:** 0
-- **Priority Score:** 101710.0
+- **Priority Score:** 101707.8
 - **Functions:** 6/13 matched (target 9)
 - **Missing functions:** `with_color`, `write_patch_into`, `write_hunk_into`, `write_line_into`, `default`, `write_into`, `fmt`
 - **Types:** 1/4 matched (target 1)
 - **Missing types:** `PatchDisplay`, `HunkDisplay`, `LineDisplay`
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `src/patch/format.rs` vs expected `patch/format.rs`
-- **Proposed provenance header:** `// port-lint: source patch/format.rs` (current: `// port-lint: source src/patch/format.rs`)
-- **Lint issues:** 1
 
-### 3. diff.mod
+### 3. apply
 
-- **Target:** `diff.Diff [STUB] [PROVENANCE-FALLBACK]`
-- **Similarity:** 0.00
+- **Target:** `apply.Apply`
+- **Similarity:** 0.44
 - **Dependents:** 0
-- **Priority Score:** 92010.0
-- **Functions:** 9/17 matched (target 19)
-- **Missing functions:** `clone`, `from`, `new`, `set_compact`, `diff`, `cow_str_to_bytes`, `default`, `set_original_and_modified_filenames`
-- **Types:** 2/3 matched
-- **Missing types:** `Diff`
-- **Tests:** 0/1 matched
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `src/diff/mod.rs` vs expected `diff/mod.rs`
-- **Proposed provenance header:** `// port-lint: source diff/mod.rs` (current: `// port-lint: source src/diff/mod.rs`)
-- **Lint issues:** 1
+- **Priority Score:** 81905.6
+- **Functions:** 9/15 matched (target 14)
+- **Missing functions:** `fmt`, `inner`, `into_inner`, `is_patched`, `clone`, `next`
+- **Types:** 2/4 matched
+- **Missing types:** `Interleave`, `Item`
 
 ### 4. patch.mod
 
-- **Target:** `patch.Patch [STUB] [PROVENANCE-FALLBACK]`
+- **Target:** `patch.Patch [STUB]`
 - **Similarity:** 0.00
 - **Dependents:** 0
-- **Priority Score:** 83110.0
-- **Functions:** 18/25 matched (target 31)
-- **Missing functions:** `to_bytes`, `clone`, `fmt`, `needs_to_be_escaped`, `as_ref`, `deref`, `len`
+- **Priority Score:** 73110.0
+- **Functions:** 19/25 matched (target 43)
+- **Missing functions:** `clone`, `fmt`, `needs_to_be_escaped`, `as_ref`, `deref`, `len`
 - **Types:** 5/6 matched (target 8)
 - **Missing types:** `Target`
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `src/patch/mod.rs` vs expected `patch/mod.rs`
-- **Proposed provenance header:** `// port-lint: source patch/mod.rs` (current: `// port-lint: source src/patch/mod.rs`)
-- **Lint issues:** 1
 
 ### 5. diff.myers
 
-- **Target:** `diff.Myers [STUB] [PROVENANCE-FALLBACK]`
-- **Similarity:** 0.00
+- **Target:** `diff.Myers`
+- **Similarity:** 0.46
 - **Dependents:** 0
-- **Priority Score:** 51310.0
+- **Priority Score:** 51305.4
 - **Functions:** 6/10 matched (target 9)
 - **Missing functions:** `new`, `index`, `index_mut`, `fmt`
 - **Types:** 2/3 matched
 - **Missing types:** `Output`
 - **Tests:** 1/1 matched
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `src/diff/myers.rs` vs expected `diff/myers.rs`
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `src/diff/myers.rs` vs expected `diff/myers.rs`
-- **Proposed provenance header:** `// port-lint: source diff/myers.rs` (current: `// port-lint: source src/diff/myers.rs`)
-- **Proposed provenance header:** `// port-lint: source diff/myers.rs` (current: `// port-lint: source src/diff/myers.rs`)
-- **TODOs:** 1
-- **Lint issues:** 2
 
 ### 6. utils
 
-- **Target:** `diffy.Utils [ZERO] [PROVENANCE-FALLBACK]`
-- **Similarity:** 0.00
+- **Target:** `diffy.Utils`
+- **Similarity:** 0.46
 - **Dependents:** 0
-- **Priority Score:** 42410.0
+- **Priority Score:** 42405.4
 - **Functions:** 18/20 matched (target 40)
 - **Missing functions:** `default`, `new`
 - **Types:** 2/4 matched (target 6)
 - **Missing types:** `Item`, `Text`
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `src/utils.rs` vs expected `utils.rs`
-- **Proposed provenance header:** `// port-lint: source utils.rs` (current: `// port-lint: source src/utils.rs`)
-- **Lint issues:** 1
 
-### 7. range
+### 7. diff.mod
 
-- **Target:** `diffy.Range [ZERO]`
+- **Target:** `diff.Diff [STUB]`
 - **Similarity:** 0.00
 - **Dependents:** 0
-- **Priority Score:** 13610.0
+- **Priority Score:** 42010.0
+- **Functions:** 13/17 matched (target 25)
+- **Missing functions:** `clone`, `from`, `cow_str_to_bytes`, `set_original_and_modified_filenames`
+- **Types:** 3/3 matched (target 7)
+- **Missing types:** _none_
+- **Tests:** 0/1 matched
+
+### 8. merge.mod
+
+- **Target:** `merge.Merge [STUB]`
+- **Similarity:** 0.00
+- **Dependents:** 0
+- **Priority Score:** 32210.0
+- **Functions:** 15/18 matched (target 17)
+- **Missing functions:** `fmt`, `clone`, `shrink_front`
+- **Types:** 4/4 matched (target 14)
+- **Missing types:** _none_
+
+### 9. diff.tests
+
+- **Target:** `diff.DiffTests`
+- **Similarity:** 0.55
+- **Dependents:** 0
+- **Priority Score:** 31504.5
+- **Functions:** 12/15 matched (target 16)
+- **Missing functions:** `range`, `same_diffs`, `diff_str`
+- **Types:** 0/0 matched (target 1)
+- **Missing types:** _none_
+- **Tests:** 12/13 matched
+
+### 10. merge.tests
+
+- **Target:** `merge.MergeTests`
+- **Similarity:** 0.50
+- **Dependents:** 0
+- **Priority Score:** 20605.0
+- **Functions:** 4/6 matched (target 5)
+- **Missing functions:** `same_merge`, `same_merge_bytes`
+- **Types:** 0/0 matched (target 1)
+- **Missing types:** _none_
+- **Tests:** 4/4 matched
+
+### 11. range
+
+- **Target:** `diffy.Range`
+- **Similarity:** 0.66
+- **Dependents:** 0
+- **Priority Score:** 13603.4
 - **Functions:** 31/32 matched (target 69)
 - **Missing functions:** `offset`
 - **Types:** 4/4 matched (target 14)
 - **Missing types:** _none_
 - **Tests:** 3/3 matched
 
-### 8. diff.cleanup
+### 12. diff.cleanup
 
-- **Target:** `diff.Cleanup [STUB] [PROVENANCE-FALLBACK]`
-- **Similarity:** 0.00
+- **Target:** `diff.Cleanup`
+- **Similarity:** 0.95
 - **Dependents:** 0
-- **Priority Score:** 310.0
+- **Priority Score:** 300.5
 - **Functions:** 3/3 matched
 - **Missing functions:** _none_
 - **Types:** 0/0 matched
 - **Missing types:** _none_
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `src/diff/cleanup.rs` vs expected `diff/cleanup.rs`
-- **Proposed provenance header:** `// port-lint: source diff/cleanup.rs` (current: `// port-lint: source src/diff/cleanup.rs`)
-- **Lint issues:** 1
 
-### 9. lib
+### 13. lib
 
-- **Target:** `diffy.Lib [STUB] [PROVENANCE-FALLBACK]`
-- **Similarity:** 0.00
+- **Target:** `diffy.Lib`
+- **Similarity:** 1.00
 - **Dependents:** 0
-- **Priority Score:** 10.0
+- **Priority Score:** 0.0
 - **Functions:** 0/0 matched
 - **Missing functions:** _none_
-- **Types:** 0/0 matched (target 1)
+- **Types:** 0/0 matched (target 12)
 - **Missing types:** _none_
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `src/lib.rs` vs expected `lib.rs`
-- **Proposed provenance header:** `// port-lint: source lib.rs` (current: `// port-lint: source src/lib.rs`)
-- **Lint issues:** 1
 
 ## Success Criteria
 
@@ -165,17 +184,4 @@ For each file to be considered "complete":
 - All tests ported
 - Documentation ported
 - port-lint header present
-
-## Reexport / Wiring Modules
-
-These files match `reexport_modules` patterns in `.ast_distance_config.json`. They are filtered out of
-normal priority and missing-file ladders because they are wiring
-modules, not direct logic ports. Consult them for call-site routing;
-do not treat them as the next implementation target by default.
-
-### Missing
-
-| Source | Expected target | Deps | Source path | Expected path |
-|--------|-----------------|------|-------------|---------------|
-| `merge.mod` | `merge.Mod` | 0 | `merge/mod.rs` | `merge/Mod.kt` |
 

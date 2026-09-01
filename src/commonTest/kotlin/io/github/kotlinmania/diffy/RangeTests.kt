@@ -1,4 +1,4 @@
-// port-lint: source range.rs
+// port-lint: tests range.rs
 package io.github.kotlinmania.diffy
 
 import kotlin.test.Test
@@ -93,8 +93,8 @@ class RangeTests {
         val text2h = Range.new(ByteSliceLike, "123456xxx".encodeToByteArray(), RangeFull)
         assertEquals(3, text1h.commonOverlapLen(text2h), "Overlap")
 
-        // Some overly clever languages (C#) may treat ligatures as equal to their
-        // component letters. E.g. U+FB01 == 'fi'
+        // Some overly clever languages may treat ligatures as equal to their
+        // component letters. E.g. U+FB01 == fi
         val text1i = Range.new(StrSliceLike, "fi", RangeFull)
         val text2i = Range.new(StrSliceLike, "ﬁi", RangeFull)
         assertEquals(0, text1i.commonOverlapLen(text2i), "Unicode")
