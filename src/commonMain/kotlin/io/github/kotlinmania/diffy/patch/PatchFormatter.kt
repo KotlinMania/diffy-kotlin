@@ -1,4 +1,4 @@
-// port-lint: source src/patch/format.rs
+// port-lint: source patch/format.rs
 package io.github.kotlinmania.diffy.patch
 
 /**
@@ -48,9 +48,8 @@ class PatchFormatter(
      *
      * Defaults to `true`.
      *
-     * For more information you can refer to the [Omitting trailing blanks](https://www.gnu.org/software/diffutils/manual/html_node/Trailing-Blanks.html)
-     * manual page of GNU diff or the [diff.suppressBlankEmpty](https://git-scm.com/docs/git-diff#Documentation/git-diff.txt-codediffsuppressBlankEmptycode)
-     * config for `git-diff`.
+     * For more information you can refer to the manual page of GNU diff or
+     * the diff suppressBlankEmpty configuration for git-diff.
      */
     fun suppressBlankEmpty(enable: Boolean): PatchFormatter =
         PatchFormatter(

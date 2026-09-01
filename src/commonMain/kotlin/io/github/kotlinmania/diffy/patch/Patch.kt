@@ -1,4 +1,4 @@
-// port-lint: source src/patch/mod.rs
+// port-lint: source patch/mod.rs
 package io.github.kotlinmania.diffy.patch
 
 import io.github.kotlinmania.diffy.byteNeedsQuoting
@@ -13,7 +13,7 @@ internal const val NO_NEWLINE_AT_EOF: String = "\\ No newline at end of file"
  *
  * Use [PatchFormatter] to format a patch for display in unified diff format.
  *
- * For parsing multi-file patches, see the patch_set module.
+ * For parsing multi-file patches, see the patch set module.
  */
 class Patch<T> private constructor(
     private val original: Filename<T>?,
@@ -47,6 +47,32 @@ class Patch<T> private constructor(
         )
     }
 
+    /**
+     * Convert a `Patch` into bytes
+     *
+     * This is the equivalent of the `toString` function but for
+     * potentially non-utf8 patches.
+     */
+    fun toBytes(): ByteArray {
+        val origVal = original?.value
+        val modVal = modified?.value
+        val lineVal =
+            hunks.firstOrNull()?.lines()?.firstOrNull()?.let {
+                when (it) {
+                    is Line.Context -> it.value
+                    is Line.Delete -> it.value
+                    is Line.Insert -> it.value
+                }
+            }
+        val isBytes = origVal is ByteArray || modVal is ByteArray || lineVal is ByteArray
+        return if (isBytes) {
+            @Suppress("UNCHECKED_CAST")
+            PatchFormatter.new().fmtPatchBytes(this as Patch<ByteArray>)
+        } else {
+            toString().encodeToByteArray()
+        }
+    }
+
     internal fun originalPath(): Filename<T>? = original
 
     internal fun modifiedPath(): Filename<T>? = modified
@@ -68,16 +94,26 @@ class Patch<T> private constructor(
         return result
     }
 
-    override fun toString(): String =
-        buildString {
-            append("Patch(original=")
-            append(original)
-            append(", modified=")
-            append(modified)
-            append(", hunks=")
-            append(hunks)
-            append(")")
+    override fun toString(): String {
+        val origVal = original?.value
+        val modVal = modified?.value
+        val lineVal =
+            hunks.firstOrNull()?.lines()?.firstOrNull()?.let {
+                when (it) {
+                    is Line.Context -> it.value
+                    is Line.Delete -> it.value
+                    is Line.Insert -> it.value
+                }
+            }
+        val isBytes = origVal is ByteArray || modVal is ByteArray || lineVal is ByteArray
+        return if (isBytes) {
+            @Suppress("UNCHECKED_CAST")
+            PatchFormatter.new().fmtPatchBytes(this as Patch<ByteArray>).decodeToString()
+        } else {
+            @Suppress("UNCHECKED_CAST")
+            PatchFormatter.new().fmtPatch(this as Patch<String>)
         }
+    }
 
     companion object {
         internal fun <T> new(
@@ -116,7 +152,7 @@ class Patch<T> private constructor(
          * trailing non-patch content after a complete hunk is ignored,
          * but orphaned hunk headers hidden behind trailing content are rejected.
          *
-         * For parsing multi-file patches, see the patch_set module.
+         * For parsing multi-file patches, see the patch set module.
          */
         fun fromStr(s: String): Result<Patch<String>> = parse(s)
 
@@ -244,6 +280,31 @@ data class Hunk<T>(
         )
     }
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Hunk<*>) return false
+        if (oldRange != other.oldRange) return false
+        if (newRange != other.newRange) return false
+        val fc1 = functionContext
+        val fc2 = other.functionContext
+        val fcEquals =
+            when {
+                fc1 is ByteArray && fc2 is ByteArray -> fc1.contentEquals(fc2)
+                else -> fc1 == fc2
+            }
+        if (!fcEquals) return false
+        if (lines != other.lines) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = oldRange.hashCode()
+        result = 31 * result + newRange.hashCode()
+        result = 31 * result + (if (functionContext is ByteArray) functionContext.contentHashCode() else (functionContext?.hashCode() ?: 0))
+        result = 31 * result + lines.hashCode()
+        return result
+    }
+
     companion object {
         internal fun <T> new(
             oldRange: HunkRange,
@@ -312,23 +373,74 @@ sealed class Line<out T> {
     /**
      * A line providing context in the diff which is present in both the old and new file
      */
-    data class Context<T>(
+    class Context<T>(
         val value: T,
-    ) : Line<T>()
+    ) : Line<T>() {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Context<*>) return false
+            val v1 = value
+            val v2 = other.value
+            return if (v1 is ByteArray && v2 is ByteArray) {
+                v1.contentEquals(v2)
+            } else {
+                v1 == v2
+            }
+        }
+
+        override fun hashCode(): Int =
+            if (value is ByteArray) value.contentHashCode() else value.hashCode()
+
+        override fun toString(): String = "Context(value=$value)"
+    }
 
     /**
      * A line deleted from the old file
      */
-    data class Delete<T>(
+    class Delete<T>(
         val value: T,
-    ) : Line<T>()
+    ) : Line<T>() {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Delete<*>) return false
+            val v1 = value
+            val v2 = other.value
+            return if (v1 is ByteArray && v2 is ByteArray) {
+                v1.contentEquals(v2)
+            } else {
+                v1 == v2
+            }
+        }
+
+        override fun hashCode(): Int =
+            if (value is ByteArray) value.contentHashCode() else value.hashCode()
+
+        override fun toString(): String = "Delete(value=$value)"
+    }
 
     /**
      * A line inserted to the new file
      */
-    data class Insert<T>(
+    class Insert<T>(
         val value: T,
-    ) : Line<T>()
+    ) : Line<T>() {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Insert<*>) return false
+            val v1 = value
+            val v2 = other.value
+            return if (v1 is ByteArray && v2 is ByteArray) {
+                v1.contentEquals(v2)
+            } else {
+                v1 == v2
+            }
+        }
+
+        override fun hashCode(): Int =
+            if (value is ByteArray) value.contentHashCode() else value.hashCode()
+
+        override fun toString(): String = "Insert(value=$value)"
+    }
 
     /**
      * Reverses the direction of this diff line.

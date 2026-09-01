@@ -1,15 +1,10 @@
-// port-lint: source src/utils.rs
+// port-lint: source utils.rs
 package io.github.kotlinmania.diffy
 
 // Common utilities
 
 /**
  * Classifies lines, converting lines into unique [Long]s for quicker comparison.
- *
- * Upstream's `Classifier<'a, T: ?Sized>` keys its hash map on `&'a T`. Kotlin's
- * built-in equality works directly for [String] but not for [ByteArray], so the
- * Kotlin port routes hashing and equality through the supplied [TextLike], which
- * returns a stable [equalityKey] for each value of [T].
  */
 class Classifier<T>(
     private val textLike: TextLike<T>,
@@ -35,7 +30,7 @@ class Classifier<T>(
     }
 }
 
-/** Iterator over the lines of a string, including the `\n` character. */
+/** Iterator over the lines of a string, including the newline character. */
 class LineIter<T>(
     private val textLike: TextLike<T>,
     initial: T,
@@ -56,13 +51,8 @@ class LineIter<T>(
 }
 
 /**
- * A helper trait for processing text like [String] and [ByteArray].
+ * A helper interface for processing text like [String] and [ByteArray].
  * Useful for abstracting over those types for parsing as well as breaking input into lines.
- *
- * Upstream Rust expresses this as `pub trait Text: Eq + Hash` implemented for `str` and
- * `[u8]`. Kotlin can't add trait methods to those external types, so the Kotlin port follows
- * the [SliceLike] pattern from [Range]: methods take the value as a parameter, and the per-type
- * impls live as singleton objects ([StrTextLike], [ByteTextLike]).
  */
 interface TextLike<T> {
     fun isEmpty(value: T): Boolean
@@ -248,7 +238,7 @@ private fun findByte(haystack: ByteArray, byte: Byte): Int? {
 /**
  * Returns `true` if a byte must be quoted in a diff filename.
  *
- * Matches git's behavior with all control characters
+ * Matches git behavior with all control characters
  * (0x00-0x1f), DEL (0x7f), double quote, and backslash.
  */
 internal fun byteNeedsQuoting(b: Byte): Boolean {

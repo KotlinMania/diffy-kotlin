@@ -1,4 +1,4 @@
-// port-lint: source src/diff/myers.rs
+// port-lint: source diff/myers.rs
 package io.github.kotlinmania.diffy.diff
 
 import io.github.kotlinmania.diffy.DiffRange
@@ -18,9 +18,9 @@ import kotlin.math.abs
 // In other words, `V` is an array of integers where `V[k]` contains the row index of the endpoint
 // of the furthest reaching path in diagonal `k`.
 //
-// We can't use a traditional List to represent `V` since we use `k` as an index and it can take
+// We cannot use a traditional List to represent `V` since we use `k` as an index and it can take
 // on negative values. So instead `V` is represented as a light-weight wrapper around an IntArray
-// plus an `offset` which is the maximum value `k` can take on in order to map negative `k`'s back
+// plus an `offset` which is the maximum value `k` can take on in order to map negative k values back
 // to a value >= 0.
 internal class V(
     maxD: Int,
@@ -51,15 +51,17 @@ internal class Snake(
 }
 
 internal fun maxD(len1: Int, len2: Int): Int {
-    // XXX look into reducing the need to have the additional '+ 1'
-    return (len1 + len2 + 1) / 2 + 1
+    // Look into reducing the need to have the additional plus one
+    val maxD = (len1 + len2 + 1) / 2 + 1
+    return maxD
 }
 
-// The divide part of a divide-and-conquer strategy. A D-path has D+1 snakes some of which may
+// Check whether the forward search path and the backward search path from the
+// opposing corners meet. A D-path has D+1 snakes some of which may
 // be empty. The divide step requires finding the ceil(D/2) + 1 or middle snake of an optimal
 // D-path. The idea for doing so is to simultaneously run the basic algorithm in both the
 // forward and reverse directions until furthest reaching forward and reverse paths starting at
-// opposing corners 'overlap'.
+// opposing corners meet.
 internal fun <S> findMiddleSnake(
     old: Range<S>,
     new: Range<S>,
@@ -115,7 +117,6 @@ internal fun <S> findMiddleSnake(
                 // Only check for connections from the forward search when N - M is odd
                 // and when there is a reciprocal k line coming from the other direction.
                 if (odd && abs(k - delta) <= (d - 1)) {
-                    // TODO optimize this so we don't have to compare against n
                     if (vf[k] + vb[-(k - delta)] >= n) {
                         // Return the snake
                         val snake =
@@ -162,7 +163,6 @@ internal fun <S> findMiddleSnake(
                 vb[k] = x
 
                 if (!odd && abs(k - delta) <= d) {
-                    // TODO optimize this so we don't have to compare against n
                     if (vb[k] + vf[-(k - delta)] >= n) {
                         // Return the snake
                         val snake =
@@ -181,11 +181,10 @@ internal fun <S> findMiddleSnake(
             }
         }
 
-        // TODO: Maybe there's an opportunity to optimize and bail early?
         d += 1
     }
 
-    error("unable to find a middle snake")
+    throw IllegalStateException("unable to find a middle snake")
 }
 
 internal fun <S> conquer(
@@ -256,7 +255,7 @@ fun <S> diff(
 
     val solution = mutableListOf<DiffRange<S>>()
 
-    // The arrays that hold the 'best possible x values' in search from:
+    // The arrays that hold the best possible x values in search from:
     // `vf`: top left to bottom right
     // `vb`: bottom right to top left
     val maxD = maxD(sliceLike.len(old), sliceLike.len(new))
