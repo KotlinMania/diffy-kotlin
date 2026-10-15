@@ -42,7 +42,7 @@ private fun <T> shiftDiffUp(
         val thisDiff = diffs[pointer]
 
         when (thisDiff) {
-            is DiffRange.Insert ->
+            is DiffRange.Insert -> {
                 when (prevDiff) {
                     is DiffRange.Equal -> {
                         val prevDiff1 = prevDiff.left
@@ -74,11 +74,13 @@ private fun <T> shiftDiffUp(
                             break
                         }
                     }
+
                     is DiffRange.Insert -> {
                         diffs[pointer - 1].growDown(thisDiff.len())
                         diffs.removeAt(pointer)
                         pointer -= 1
                     }
+
                     is DiffRange.Delete -> {
                         val temp = diffs[pointer - 1]
                         diffs[pointer - 1] = diffs[pointer]
@@ -86,8 +88,9 @@ private fun <T> shiftDiffUp(
                         pointer -= 1
                     }
                 }
+            }
 
-            is DiffRange.Delete ->
+            is DiffRange.Delete -> {
                 when (prevDiff) {
                     is DiffRange.Equal -> {
                         val prevDiff2 = prevDiff.right
@@ -119,11 +122,13 @@ private fun <T> shiftDiffUp(
                             break
                         }
                     }
+
                     is DiffRange.Delete -> {
                         diffs[pointer - 1].growDown(thisDiff.len())
                         diffs.removeAt(pointer)
                         pointer -= 1
                     }
+
                     is DiffRange.Insert -> {
                         val temp = diffs[pointer - 1]
                         diffs[pointer - 1] = diffs[pointer]
@@ -131,8 +136,11 @@ private fun <T> shiftDiffUp(
                         pointer -= 1
                     }
                 }
+            }
 
-            is DiffRange.Equal -> throw IllegalStateException("range to shift must be either Insert or Delete")
+            is DiffRange.Equal -> {
+                throw IllegalStateException("range to shift must be either Insert or Delete")
+            }
         }
     }
 
@@ -150,7 +158,7 @@ private fun <T> shiftDiffDown(
         val nextDiff = diffs[pointer + 1]
 
         when (thisDiff) {
-            is DiffRange.Insert ->
+            is DiffRange.Insert -> {
                 when (nextDiff) {
                     is DiffRange.Equal -> {
                         val nextDiff1 = nextDiff.left
@@ -182,19 +190,22 @@ private fun <T> shiftDiffDown(
                             break
                         }
                     }
+
                     is DiffRange.Delete -> {
                         val temp = diffs[pointer]
                         diffs[pointer] = diffs[pointer + 1]
                         diffs[pointer + 1] = temp
                         pointer += 1
                     }
+
                     is DiffRange.Insert -> {
                         diffs[pointer].growDown(nextDiff.len())
                         diffs.removeAt(pointer + 1)
                     }
                 }
+            }
 
-            is DiffRange.Delete ->
+            is DiffRange.Delete -> {
                 when (nextDiff) {
                     is DiffRange.Equal -> {
                         val nextDiff2 = nextDiff.right
@@ -226,19 +237,24 @@ private fun <T> shiftDiffDown(
                             break
                         }
                     }
+
                     is DiffRange.Insert -> {
                         val temp = diffs[pointer]
                         diffs[pointer] = diffs[pointer + 1]
                         diffs[pointer + 1] = temp
                         pointer += 1
                     }
+
                     is DiffRange.Delete -> {
                         diffs[pointer].growDown(nextDiff.len())
                         diffs.removeAt(pointer + 1)
                     }
                 }
+            }
 
-            is DiffRange.Equal -> throw IllegalStateException("range to shift must be either Insert or Delete")
+            is DiffRange.Equal -> {
+                throw IllegalStateException("range to shift must be either Insert or Delete")
+            }
         }
     }
 

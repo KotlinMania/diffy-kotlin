@@ -231,7 +231,7 @@ internal fun <S> conquer(
         solution.add(DiffRange.Delete(old))
     } else {
         // Divide & Conquer
-        val (_shortestEditScriptLen, snake) = findMiddleSnake(old, new, vf, vb)
+        val (_, snake) = findMiddleSnake(old, new, vf, vb)
 
         val (oldA, oldB) = old.splitAt(snake.xStart)
         val (newA, newB) = new.splitAt(snake.yStart)

@@ -99,7 +99,7 @@ private fun applyHunk(
         postImage(hunk.lines())
             .map { ImageLine.Patched(it) }
 
-    for (k in 0 until preCount) {
+    repeat(preCount) {
         image.removeAt(pos)
     }
     image.addAll(pos, replacement)
@@ -117,7 +117,7 @@ private fun applyHunkBytes(
         postImage(hunk.lines())
             .map { ImageLine.Patched(it) }
 
-    for (k in 0 until preCount) {
+    repeat(preCount) {
         image.removeAt(pos)
     }
     image.addAll(pos, replacement)

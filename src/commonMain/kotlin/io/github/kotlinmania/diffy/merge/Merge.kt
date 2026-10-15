@@ -188,6 +188,7 @@ class MergeOptions(
 
     companion object {
         fun new(): MergeOptions = MergeOptions()
+
         fun default(): MergeOptions = MergeOptions()
     }
 }
@@ -232,10 +233,12 @@ private fun <T> mergeSolutions(
                     ours = null
                     Diff3Range.Ours(currOurs.range)
                 }
+
                 currTheirs is DiffRange.Insert -> {
                     theirs = null
                     Diff3Range.Theirs(currTheirs.range)
                 }
+
                 currOurs is DiffRange.Equal && currTheirs is DiffRange.Equal -> {
                     require(currOurs.left.offset == currTheirs.left.offset)
                     val len = min(currOurs.left.len, currTheirs.left.len)
@@ -248,6 +251,7 @@ private fun <T> mergeSolutions(
 
                     Diff3Range.Equal(ancestorSlice, ourSlice, theirSlice)
                 }
+
                 currOurs is DiffRange.Equal && currTheirs is DiffRange.Delete -> {
                     require(currOurs.left.offset == currTheirs.range.offset)
                     val len = min(currOurs.left.len, currTheirs.range.len)
@@ -259,6 +263,7 @@ private fun <T> mergeSolutions(
 
                     Diff3Range.AncestorOurs(ancestorSlice, ourSlice)
                 }
+
                 currOurs is DiffRange.Delete && currTheirs is DiffRange.Equal -> {
                     require(currOurs.range.offset == currTheirs.left.offset)
                     val len = min(currOurs.range.len, currTheirs.left.len)
@@ -270,6 +275,7 @@ private fun <T> mergeSolutions(
 
                     Diff3Range.AncestorTheirs(ancestorSlice, theirSlice)
                 }
+
                 currOurs is DiffRange.Delete && currTheirs is DiffRange.Delete -> {
                     require(currOurs.range.offset == currTheirs.range.offset)
                     val len = min(currOurs.range.len, currTheirs.range.len)
@@ -280,7 +286,10 @@ private fun <T> mergeSolutions(
 
                     Diff3Range.Ancestor(ancestorSlice)
                 }
-                else -> throw IllegalStateException("Equal/Delete should match up: ours=$currOurs, theirs=$currTheirs")
+
+                else -> {
+                    throw IllegalStateException("Equal/Delete should match up: ours=$currOurs, theirs=$currTheirs")
+                }
             }
 
         solution.add(mergeRange)
@@ -314,22 +323,27 @@ private fun <T> diff3RangeToMergeRange(
                 theirs = null
                 merge.add(MergeRange.Equal(diff3.ancestor, diff3.ours, diff3.theirs))
             }
+
             is Diff3Range.Ancestor -> {
                 ancestor = setOrMergeRange(ancestor, diff3.ancestor)
                 ours = setOrMergeRange(ours, Range.empty(diff3.ancestor.sliceLike))
                 theirs = setOrMergeRange(theirs, Range.empty(diff3.ancestor.sliceLike))
             }
+
             is Diff3Range.AncestorOurs -> {
                 ancestor = setOrMergeRange(ancestor, diff3.ancestor)
                 ours = setOrMergeRange(ours, diff3.ours)
             }
+
             is Diff3Range.AncestorTheirs -> {
                 ancestor = setOrMergeRange(ancestor, diff3.ancestor)
                 theirs = setOrMergeRange(theirs, diff3.theirs)
             }
+
             is Diff3Range.Ours -> {
                 ours = setOrMergeRange(ours, diff3.ours)
             }
+
             is Diff3Range.Theirs -> {
                 theirs = setOrMergeRange(theirs, diff3.theirs)
             }
@@ -365,19 +379,33 @@ private fun <T> createMergeRange(
     theirs: Range<T>?,
 ): MergeRange<T>? =
     when {
-        ancestor != null && ours != null && theirs != null ->
+        ancestor != null && ours != null && theirs != null -> {
             MergeRange.Conflict(ancestor, ours, theirs)
-        ancestor == null && ours != null && theirs != null ->
+        }
+
+        ancestor == null && ours != null && theirs != null -> {
             MergeRange.Conflict(Range.empty(ours.sliceLike), ours, theirs)
-        ancestor == null && ours != null && theirs == null ->
+        }
+
+        ancestor == null && ours != null && theirs == null -> {
             MergeRange.Ours(ours)
-        ancestor == null && ours == null && theirs != null ->
+        }
+
+        ancestor == null && ours == null && theirs != null -> {
             MergeRange.Theirs(theirs)
-        ancestor != null && ours == null && theirs != null ->
+        }
+
+        ancestor != null && ours == null && theirs != null -> {
             MergeRange.Conflict(ancestor, Range.empty(theirs.sliceLike), theirs)
-        ancestor != null && ours != null && theirs == null ->
+        }
+
+        ancestor != null && ours != null && theirs == null -> {
             MergeRange.Conflict(ancestor, ours, Range.empty(ours.sliceLike))
-        else -> null
+        }
+
+        else -> {
+            null
+        }
     }
 
 private fun <T> cleanupConflicts(
@@ -419,6 +447,7 @@ private fun outputResult(
                     output.append(ancestor[i])
                 }
             }
+
             is MergeRange.Conflict -> {
                 addConflictMarker(output, '<', markerLen, "ours")
                 for (i in mergeRange.ours.range()) {
@@ -439,16 +468,19 @@ private fun outputResult(
                 addConflictMarker(output, '>', markerLen, "theirs")
                 conflicts += 1
             }
+
             is MergeRange.Ours -> {
                 for (i in mergeRange.ours.range()) {
                     output.append(ours[i])
                 }
             }
+
             is MergeRange.Theirs -> {
                 for (i in mergeRange.theirs.range()) {
                     output.append(theirs[i])
                 }
             }
+
             is MergeRange.Both -> {
                 for (i in mergeRange.ours.range()) {
                     output.append(ours[i])
@@ -470,7 +502,7 @@ private fun addConflictMarker(
     markerLen: Int,
     filename: String?,
 ) {
-    for (i in 0 until markerLen) {
+    repeat(markerLen) {
         output.append(marker)
     }
     if (filename != null) {
@@ -498,6 +530,7 @@ private fun outputResultBytes(
                     byteList.add(ancestor[i])
                 }
             }
+
             is MergeRange.Conflict -> {
                 addConflictMarkerBytes(byteList, '<'.code.toByte(), markerLen, "ours".encodeToByteArray())
                 for (i in mergeRange.ours.range()) {
@@ -518,16 +551,19 @@ private fun outputResultBytes(
                 addConflictMarkerBytes(byteList, '>'.code.toByte(), markerLen, "theirs".encodeToByteArray())
                 conflicts += 1
             }
+
             is MergeRange.Ours -> {
                 for (i in mergeRange.ours.range()) {
                     byteList.add(ours[i])
                 }
             }
+
             is MergeRange.Theirs -> {
                 for (i in mergeRange.theirs.range()) {
                     byteList.add(theirs[i])
                 }
             }
+
             is MergeRange.Both -> {
                 for (i in mergeRange.ours.range()) {
                     byteList.add(ours[i])

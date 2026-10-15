@@ -18,9 +18,17 @@ import kotlin.math.min
  * An individual diff element.
  */
 sealed class Diff<T> {
-    data class Equal<T>(val value: T) : Diff<T>()
-    data class Delete<T>(val value: T) : Diff<T>()
-    data class Insert<T>(val value: T) : Diff<T>()
+    data class Equal<T>(
+        val value: T,
+    ) : Diff<T>()
+
+    data class Delete<T>(
+        val value: T,
+    ) : Diff<T>()
+
+    data class Insert<T>(
+        val value: T,
+    ) : Diff<T>()
 }
 
 /**
@@ -83,11 +91,12 @@ class DiffOptions {
      * Generate diff elements between original and modified strings
      */
     fun diff(original: String, modified: String): List<Diff<String>> {
-        val solution = io.github.kotlinmania.diffy.diff.diff(
-            io.github.kotlinmania.diffy.ByteSliceLike,
-            original.encodeToByteArray(),
-            modified.encodeToByteArray(),
-        )
+        val solution =
+            io.github.kotlinmania.diffy.diff.diff(
+                io.github.kotlinmania.diffy.ByteSliceLike,
+                original.encodeToByteArray(),
+                modified.encodeToByteArray(),
+            )
 
         val strSolution = solution.map { it.toStr(original, modified) }.toMutableList()
 
@@ -106,6 +115,7 @@ class DiffOptions {
 
     companion object {
         fun new(): DiffOptions = DiffOptions()
+
         fun default(): DiffOptions = DiffOptions()
     }
 
@@ -299,7 +309,6 @@ private fun <T> toHunks(
                 val start1Next = min(s.old.first, lines1.size - 1).coerceAtLeast(0) - contextLen
                 if (start1Next < end1) {
                     // Context lines between hunks
-                    val oldEnd = script.old.last + 1
                     val newEnd = script.new.last + 1
                     for (i in newEnd until s.new.first) {
                         if (i < lines2.size) {
@@ -390,6 +399,7 @@ private fun buildEditScript(solution: List<DiffRange<*>>): List<EditRange> {
                 script?.let { editScript.add(it) }
                 script = null
             }
+
             is DiffRange.Delete<*> -> {
                 val len = diff.range.len
                 script =
@@ -400,6 +410,7 @@ private fun buildEditScript(solution: List<DiffRange<*>>): List<EditRange> {
                     }
                 idxA += len
             }
+
             is DiffRange.Insert<*> -> {
                 val len = diff.range.len
                 script =

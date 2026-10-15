@@ -5,13 +5,15 @@ Based on AST analysis, here are the concrete next steps.
 ## Summary
 
 - **Files Present:** 13/13 (100.0%)
-- **Function parity:** 148/197 matched (target 279) — 75.1%
+- **Function parity:** 197/262 matched (target 279) — 75.2%
 - **Class/type parity:** 25/35 matched (target 99) — 71.4%
-- **Combined symbol parity:** 173/232 matched (target 378) — 74.6%
-- **Average inline-code cosine:** 0.55 (function body across 10 matched files)
+- **Combined symbol parity:** 222/297 matched (target 378) — 74.7%
+- **Average inline-code cosine:** 0.27 (function body across 10 matched files)
 - **Average documentation cosine:** 0.20 (doc text across 10 matched files)
 - **Cheat-zeroed Files:** 3
-- **Critical Issues:** 10 files with <0.60 function similarity
+- **Critical Issues:** 12 files with <0.60 function similarity
+- **Needs Review:** 0 files with 0.60-0.84 function similarity
+- **Excellent:** 1 files with >=0.85 function similarity
 
 ## Priority 1: Fix Incomplete High-Dependency Files
 
@@ -27,139 +29,139 @@ No missing high-value files detected.
 
 Every matched file is listed below with function and type symbol parity.
 
-### 1. patch.parse
+### 1. patch.mod
+
+- **Target:** `patch.Patch [STUB]`
+- **Similarity:** 0.00
+- **Dependents:** 0
+- **Priority Score:** 144210.0
+- **Functions:** 23/36 matched (target 43)
+- **Missing functions:** `clone`, `fmt`, `fmt`, `needs_to_be_escaped`, `as_ref`, `deref`, `clone`, `fmt`, `fmt`, `clone`, `len`, `fmt`, `clone`
+- **Types:** 5/6 matched (target 8)
+- **Missing types:** `Target`
+
+### 2. patch.format
+
+- **Target:** `patch.PatchFormatter`
+- **Similarity:** 0.02
+- **Dependents:** 0
+- **Priority Score:** 142109.8
+- **Functions:** 6/17 matched (target 9)
+- **Missing functions:** `with_color`, `write_patch_into`, `write_hunk_into`, `write_line_into`, `default`, `write_into`, `fmt`, `write_into`, `fmt`, `write_into`, `fmt`
+- **Types:** 1/4 matched (target 1)
+- **Missing types:** `PatchDisplay`, `HunkDisplay`, `LineDisplay`
+
+### 3. patch.parse
 
 - **Target:** `patch.Error`
-- **Similarity:** 0.29
+- **Similarity:** 0.07
 - **Dependents:** 0
-- **Priority Score:** 122607.1
-- **Functions:** 12/23 matched (target 29)
+- **Priority Score:** 122709.3
+- **Functions:** 13/24 matched (target 29)
 - **Missing functions:** `fmt`, `convert_cow_to_str`, `patch_header`, `parse_filename`, `is_quoted`, `unescaped_filename`, `escaped_filename`, `range`, `test_escaped_filenames`, `test_missing_filename_header`, `adjacent_hunks_correctly_parse`
 - **Types:** 2/3 matched (target 28)
 - **Missing types:** `Result`
 - **Tests:** 0/3 matched
 
-### 2. patch.format
-
-- **Target:** `patch.PatchFormatter`
-- **Similarity:** 0.22
-- **Dependents:** 0
-- **Priority Score:** 101707.8
-- **Functions:** 6/13 matched (target 9)
-- **Missing functions:** `with_color`, `write_patch_into`, `write_hunk_into`, `write_line_into`, `default`, `write_into`, `fmt`
-- **Types:** 1/4 matched (target 1)
-- **Missing types:** `PatchDisplay`, `HunkDisplay`, `LineDisplay`
-
-### 3. apply
+### 4. apply
 
 - **Target:** `apply.Apply`
-- **Similarity:** 0.44
+- **Similarity:** 0.10
 - **Dependents:** 0
-- **Priority Score:** 81905.6
+- **Priority Score:** 81909.0
 - **Functions:** 9/15 matched (target 14)
 - **Missing functions:** `fmt`, `inner`, `into_inner`, `is_patched`, `clone`, `next`
 - **Types:** 2/4 matched
 - **Missing types:** `Interleave`, `Item`
 
-### 4. patch.mod
+### 5. merge.mod
 
-- **Target:** `patch.Patch [STUB]`
+- **Target:** `merge.Merge [STUB]`
 - **Similarity:** 0.00
 - **Dependents:** 0
-- **Priority Score:** 73110.0
-- **Functions:** 19/25 matched (target 43)
-- **Missing functions:** `clone`, `fmt`, `needs_to_be_escaped`, `as_ref`, `deref`, `len`
-- **Types:** 5/6 matched (target 8)
-- **Missing types:** `Target`
+- **Priority Score:** 52610.0
+- **Functions:** 17/22 matched (target 17)
+- **Missing functions:** `fmt`, `clone`, `fmt`, `clone`, `shrink_front`
+- **Types:** 4/4 matched (target 14)
+- **Missing types:** _none_
 
-### 5. diff.myers
+### 6. diff.mod
+
+- **Target:** `diff.Diff [STUB]`
+- **Similarity:** 0.00
+- **Dependents:** 0
+- **Priority Score:** 52410.0
+- **Functions:** 16/21 matched (target 25)
+- **Missing functions:** `clone`, `from`, `cow_str_to_bytes`, `new`, `set_original_and_modified_filenames`
+- **Types:** 3/3 matched (target 7)
+- **Missing types:** _none_
+- **Tests:** 0/1 matched
+
+### 7. diff.myers
 
 - **Target:** `diff.Myers`
-- **Similarity:** 0.46
+- **Similarity:** 0.27
 - **Dependents:** 0
-- **Priority Score:** 51305.4
+- **Priority Score:** 51307.3
 - **Functions:** 6/10 matched (target 9)
 - **Missing functions:** `new`, `index`, `index_mut`, `fmt`
 - **Types:** 2/3 matched
 - **Missing types:** `Output`
 - **Tests:** 1/1 matched
 
-### 6. utils
+### 8. utils
 
 - **Target:** `diffy.Utils`
-- **Similarity:** 0.46
+- **Similarity:** 0.12
 - **Dependents:** 0
-- **Priority Score:** 42405.4
-- **Functions:** 18/20 matched (target 40)
+- **Priority Score:** 43608.8
+- **Functions:** 30/32 matched (target 40)
 - **Missing functions:** `default`, `new`
 - **Types:** 2/4 matched (target 6)
 - **Missing types:** `Item`, `Text`
 
-### 7. diff.mod
+### 9. range
 
-- **Target:** `diff.Diff [STUB]`
-- **Similarity:** 0.00
+- **Target:** `diffy.Range`
+- **Similarity:** 0.23
 - **Dependents:** 0
-- **Priority Score:** 42010.0
-- **Functions:** 13/17 matched (target 25)
-- **Missing functions:** `clone`, `from`, `cow_str_to_bytes`, `set_original_and_modified_filenames`
-- **Types:** 3/3 matched (target 7)
-- **Missing types:** _none_
-- **Tests:** 0/1 matched
-
-### 8. merge.mod
-
-- **Target:** `merge.Merge [STUB]`
-- **Similarity:** 0.00
-- **Dependents:** 0
-- **Priority Score:** 32210.0
-- **Functions:** 15/18 matched (target 17)
-- **Missing functions:** `fmt`, `clone`, `shrink_front`
+- **Priority Score:** 36507.7
+- **Functions:** 58/61 matched (target 69)
+- **Missing functions:** `offset`, `inner`, `len`
 - **Types:** 4/4 matched (target 14)
 - **Missing types:** _none_
+- **Tests:** 3/3 matched
 
-### 9. diff.tests
+### 10. diff.tests
 
 - **Target:** `diff.DiffTests`
-- **Similarity:** 0.55
+- **Similarity:** 0.20
 - **Dependents:** 0
-- **Priority Score:** 31504.5
+- **Priority Score:** 31508.0
 - **Functions:** 12/15 matched (target 16)
 - **Missing functions:** `range`, `same_diffs`, `diff_str`
 - **Types:** 0/0 matched (target 1)
 - **Missing types:** _none_
 - **Tests:** 12/13 matched
 
-### 10. merge.tests
+### 11. merge.tests
 
 - **Target:** `merge.MergeTests`
-- **Similarity:** 0.50
+- **Similarity:** 0.27
 - **Dependents:** 0
-- **Priority Score:** 20605.0
+- **Priority Score:** 20607.3
 - **Functions:** 4/6 matched (target 5)
 - **Missing functions:** `same_merge`, `same_merge_bytes`
 - **Types:** 0/0 matched (target 1)
 - **Missing types:** _none_
 - **Tests:** 4/4 matched
 
-### 11. range
-
-- **Target:** `diffy.Range`
-- **Similarity:** 0.66
-- **Dependents:** 0
-- **Priority Score:** 13603.4
-- **Functions:** 31/32 matched (target 69)
-- **Missing functions:** `offset`
-- **Types:** 4/4 matched (target 14)
-- **Missing types:** _none_
-- **Tests:** 3/3 matched
-
 ### 12. diff.cleanup
 
 - **Target:** `diff.Cleanup`
-- **Similarity:** 0.95
+- **Similarity:** 0.44
 - **Dependents:** 0
-- **Priority Score:** 300.5
+- **Priority Score:** 305.6
 - **Functions:** 3/3 matched
 - **Missing functions:** _none_
 - **Types:** 0/0 matched
