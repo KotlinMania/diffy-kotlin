@@ -214,6 +214,7 @@ internal class Filename<T>(
                     value
                 }
             }
+
             is ByteArray -> {
                 if (needsToBeEscapedBytes(value)) {
                     buildString {
@@ -227,7 +228,10 @@ internal class Filename<T>(
                     value.decodeToString()
                 }
             }
-            else -> value.toString()
+
+            else -> {
+                value.toString()
+            }
         }
 }
 

@@ -241,41 +241,37 @@ private fun findByte(haystack: ByteArray, byte: Byte): Int? {
  * Matches git behavior with all control characters
  * (0x00-0x1f), DEL (0x7f), double quote, and backslash.
  */
-internal fun byteNeedsQuoting(b: Byte): Boolean {
-    val unsigned = b.toInt() and 0xFF
-    return unsigned < 0x20 || unsigned == 0x7f || b == '"'.code.toByte() || b == '\\'.code.toByte()
-}
+internal val ESCAPED_CHARS_BYTES: Set<Byte> =
+    setOf(
+        '\n'.code.toByte(),
+        '\t'.code.toByte(),
+        0.toByte(),
+        '\r'.code.toByte(),
+        '"'.code.toByte(),
+        '\\'.code.toByte(),
+    )
 
 /**
- * Writes one byte in its escaped form to a [StringBuilder] or [Appendable].
+ * Returns true if a byte requires quoting in a diff header.
  *
- * Named escapes are used where git defines them (`\a`, `\b`,
- * `\t`, `\n`, `\v`, `\f`, `\r`, `\\`, `\"`). Other bytes that
- * require quoting are emitted as 3-digit octal (`\NNN`).
- * Non-special bytes are written through unchanged.
+ * Matches upstream Rust diffy: \n, \t, \0, \r, ", \.
+ */
+internal fun byteNeedsQuoting(b: Byte): Boolean = b in ESCAPED_CHARS_BYTES
+
+/**
+ * Writes one byte in its escaped form to an [Appendable].
+ *
+ * Matches upstream Rust diffy: \n, \t, \0, \r, \", \\.
  */
 internal fun fmtEscapedByte(out: Appendable, b: Byte) {
     when (b.toInt()) {
-        0x07 -> out.append("\\a")
-        0x08 -> out.append("\\b")
-        '\t'.code -> out.append("\\t")
         '\n'.code -> out.append("\\n")
-        0x0b -> out.append("\\v")
-        0x0c -> out.append("\\f")
+        '\t'.code -> out.append("\\t")
+        0 -> out.append("\\0")
         '\r'.code -> out.append("\\r")
         '"'.code -> out.append("\\\"")
         '\\'.code -> out.append("\\\\")
-        else -> {
-            val unsigned = b.toInt() and 0xFF
-            if (unsigned < 0x20 || unsigned == 0x7f) {
-                out.append("\\")
-                out.append(('0'.code + (unsigned shr 6)).toChar())
-                out.append(('0'.code + ((unsigned shr 3) and 7)).toChar())
-                out.append(('0'.code + (unsigned and 7)).toChar())
-            } else {
-                out.append((b.toInt() and 0xFF).toChar())
-            }
-        }
+        else -> out.append((b.toInt() and 0xFF).toChar())
     }
 }
 
@@ -296,12 +292,17 @@ internal fun escapedFilenameStr(filename: String): Result<String> {
     if (withQuotesStripped != null) {
         // Quoted filename: decode escape sequences
         val bytes = withQuotesStripped.encodeToByteArray()
-        val decodedBytes = decodeEscaped(bytes)
+        val decodedResult = decodeEscaped(bytes)
+        if (decodedResult.isFailure) {
+            return Result.failure(decodedResult.exceptionOrNull()!!)
+        }
+        val decodedBytes = decodedResult.getOrThrow()
         return when (decodedBytes) {
             null -> {
                 // No escapes found, use the inner content directly
                 Result.success(withQuotesStripped)
             }
+
             else -> {
                 // Escapes were decoded; convert bytes back to String
                 runCatching {
@@ -343,12 +344,17 @@ internal fun escapedFilenameBytes(filename: ByteArray): Result<ByteArray> {
 
     if (withQuotesStripped != null) {
         // Quoted filename: decode escape sequences
-        val decodedBytes = decodeEscaped(withQuotesStripped)
+        val decodedResult = decodeEscaped(withQuotesStripped)
+        if (decodedResult.isFailure) {
+            return Result.failure(decodedResult.exceptionOrNull()!!)
+        }
+        val decodedBytes = decodedResult.getOrThrow()
         return when (decodedBytes) {
             null -> {
                 // No escapes found, use the inner content directly
                 Result.success(withQuotesStripped)
             }
+
             else -> {
                 // Escapes were decoded
                 Result.success(decodedBytes)
@@ -370,11 +376,11 @@ internal fun escapedFilenameBytes(filename: ByteArray): Result<ByteArray> {
 /**
  * Decodes escape sequences in a byte array.
  *
- * Returns `null` if no escapes were found (the input is clean).
- * Returns the decoded bytes if escapes were processed.
- * Throws ParsePatchError if escape sequences are invalid.
+ * Returns `Result.success(null)` if no escapes were found (the input is clean).
+ * Returns `Result.success(decodedBytes)` if escapes were processed.
+ * Returns `Result.failure(ParsePatchError)` if escape sequences are invalid.
  */
-private fun decodeEscaped(bytes: ByteArray): ByteArray? {
+private fun decodeEscaped(bytes: ByteArray): Result<ByteArray?> {
     val result = mutableListOf<Byte>()
     var i = 0
     var lastCopy = 0
@@ -387,56 +393,41 @@ private fun decodeEscaped(bytes: ByteArray): ByteArray? {
 
             i += 1
             if (i >= bytes.size) {
-                throw io.github.kotlinmania.diffy.patch.ParsePatchError.new(
-                    io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.ExpectedEscapedChar,
+                return Result.failure(
+                    io.github.kotlinmania.diffy.patch.ParsePatchError.new(
+                        io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.ExpectedEscapedChar,
+                    ),
                 )
             }
 
             val decoded =
                 when (bytes[i]) {
-                    'a'.code.toByte() -> 0x07.toByte()
-                    'b'.code.toByte() -> 0x08.toByte()
                     'n'.code.toByte() -> '\n'.code.toByte()
+
                     't'.code.toByte() -> '\t'.code.toByte()
-                    'v'.code.toByte() -> 0x0b.toByte()
-                    'f'.code.toByte() -> 0x0c.toByte()
+
+                    '0'.code.toByte() -> 0.toByte()
+
                     'r'.code.toByte() -> '\r'.code.toByte()
+
                     '"'.code.toByte() -> '"'.code.toByte()
+
                     '\\'.code.toByte() -> '\\'.code.toByte()
-                    in '0'.code.toByte()..'3'.code.toByte() -> {
-                        // 3-digit octal: \0xx through \3xx (values 0x00–0xFF)
-                        val c = bytes[i]
-                        if (i + 2 >= bytes.size) {
-                            throw io.github.kotlinmania.diffy.patch.ParsePatchError.new(
-                                io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidEscapedChar,
-                            )
-                        }
-                        val d1 = bytes[i + 1]
-                        val d2 = bytes[i + 2]
-                        if (d1 !in '0'.code.toByte()..'7'.code.toByte() ||
-                            d2 !in '0'.code.toByte()..'7'.code.toByte()
-                        ) {
-                            throw io.github.kotlinmania.diffy.patch.ParsePatchError.new(
-                                io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidEscapedChar,
-                            )
-                        }
-                        i += 2
-                        val value =
-                            ((c - '0'.code.toByte()) shl 6) or
-                                ((d1 - '0'.code.toByte()) shl 3) or
-                                (d2 - '0'.code.toByte())
-                        value.toByte()
-                    }
-                    else -> throw io.github.kotlinmania.diffy.patch.ParsePatchError.new(
-                        io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidEscapedChar,
+
+                    else -> return Result.failure(
+                        io.github.kotlinmania.diffy.patch.ParsePatchError.new(
+                            io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidEscapedChar,
+                        ),
                     )
                 }
             result.add(decoded)
             i += 1
             lastCopy = i
         } else if (byteNeedsQuoting(bytes[i])) {
-            throw io.github.kotlinmania.diffy.patch.ParsePatchError.new(
-                io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidUnescapedChar,
+            return Result.failure(
+                io.github.kotlinmania.diffy.patch.ParsePatchError.new(
+                    io.github.kotlinmania.diffy.patch.ParsePatchErrorKind.InvalidUnescapedChar,
+                ),
             )
         } else {
             i += 1
@@ -445,8 +436,8 @@ private fun decodeEscaped(bytes: ByteArray): ByteArray? {
 
     return if (needsAllocation) {
         result.addAll(bytes.copyOfRange(lastCopy, bytes.size).toList())
-        result.toByteArray()
+        Result.success(result.toByteArray())
     } else {
-        null
+        Result.success(null)
     }
 }

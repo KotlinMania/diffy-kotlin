@@ -192,6 +192,7 @@ object StrSliceLike : SliceLike<String> {
                 }
                 lhs = lhs.substring(0, end)
             }
+
             lhs.length < rhs.length -> {
                 var start = rhs.length - lhs.length
                 while (!rhs.isCharBoundaryAt(start)) {
@@ -199,6 +200,7 @@ object StrSliceLike : SliceLike<String> {
                 }
                 rhs = rhs.substring(start)
             }
+
             else -> {}
         }
 
@@ -354,8 +356,14 @@ sealed class DiffRange<T> {
                 f(left)
                 f(right)
             }
-            is Delete -> f(range)
-            is Insert -> f(range)
+
+            is Delete -> {
+                f(range)
+            }
+
+            is Insert -> {
+                f(range)
+            }
         }
     }
 
@@ -410,6 +418,7 @@ fun DiffRange<ByteArray>.toStr(text1: String, text2: String): DiffRange<String> 
                 Range(StrSliceLike, text2, charOffset2, charLen2),
             )
         }
+
         is DiffRange.Delete -> {
             var offset = range.offset
             var len = range.len
@@ -422,6 +431,7 @@ fun DiffRange<ByteArray>.toStr(text1: String, text2: String): DiffRange<String> 
             val charLen = text1.utf8ByteIndexToCharIndex(offset + len) - charOffset
             DiffRange.Delete(Range(StrSliceLike, text1, charOffset, charLen))
         }
+
         is DiffRange.Insert -> {
             var offset = range.offset
             var len = range.len

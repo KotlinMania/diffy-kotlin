@@ -54,11 +54,11 @@ internal class Parser<T>(
     fun offset(): Int = offset
 
     fun next(): Result<T> {
+        val currentPeeked = peeked
         val line =
-            if (peeked != null) {
-                val p = peeked
+            if (currentPeeked != null) {
                 peeked = null
-                p!!
+                currentPeeked
             } else {
                 if (!lines.hasNext()) {
                     return Result.failure(error(ParsePatchErrorKind.UnexpectedEof))
@@ -512,6 +512,7 @@ private fun <T> hunkLines(
                 textLike.startsWith(peekedLine, "@") -> {
                     break
                 }
+
                 noNewlineContext -> {
                     // After `\ No newline at end of file` on a context line,
                     // only a new hunk header is valid. Any other line means
@@ -521,6 +522,7 @@ private fun <T> hunkLines(
                     }
                     return Result.failure(parser.error(ParsePatchErrorKind.ExpectedEndOfHunk))
                 }
+
                 textLike.startsWith(peekedLine, " ") -> {
                     if (hunkComplete) {
                         break
@@ -528,12 +530,14 @@ private fun <T> hunkLines(
                     val stripped = textLike.stripPrefix(peekedLine, " ")!!
                     Line.Context(stripped)
                 }
+
                 textLike.startsWith(peekedLine, "\n") -> {
                     if (hunkComplete) {
                         break
                     }
                     Line.Context(peekedLine)
                 }
+
                 textLike.startsWith(peekedLine, "-") -> {
                     if (noNewlineDelete) {
                         return Result.failure(parser.error(ParsePatchErrorKind.TooManyDeletedLines))
@@ -544,6 +548,7 @@ private fun <T> hunkLines(
                     val stripped = textLike.stripPrefix(peekedLine, "-")!!
                     Line.Delete(stripped)
                 }
+
                 textLike.startsWith(peekedLine, "+") -> {
                     if (noNewlineInsert) {
                         return Result.failure(parser.error(ParsePatchErrorKind.TooManyInsertedLines))
@@ -554,6 +559,7 @@ private fun <T> hunkLines(
                     val stripped = textLike.stripPrefix(peekedLine, "+")!!
                     Line.Insert(stripped)
                 }
+
                 textLike.startsWith(peekedLine, NO_NEWLINE_AT_EOF) -> {
                     // The `\ No newline at end of file` marker indicates
                     // the previous line doesn't end with a newline.
@@ -585,10 +591,12 @@ private fun <T> hunkLines(
                                 noNewlineContext = true
                                 Line.Context(stripped)
                             }
+
                             is Line.Delete -> {
                                 noNewlineDelete = true
                                 Line.Delete(stripped)
                             }
+
                             is Line.Insert -> {
                                 noNewlineInsert = true
                                 Line.Insert(stripped)
@@ -601,6 +609,7 @@ private fun <T> hunkLines(
                     }
                     continue
                 }
+
                 else -> {
                     // Non-hunk line encountered
                     if (hunkComplete) {
@@ -617,9 +626,11 @@ private fun <T> hunkLines(
                     oldCount += 1
                     newCount += 1
                 }
+
                 is Line.Delete -> {
                     oldCount += 1
                 }
+
                 is Line.Insert -> {
                     newCount += 1
                 }

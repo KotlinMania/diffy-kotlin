@@ -22,8 +22,14 @@ class DiffTests {
         val text2Builder = StringBuilder()
         for ((kind, text) in items) {
             when (kind) {
-                "Insert" -> text2Builder.append(text)
-                "Delete" -> text1Builder.append(text)
+                "Insert" -> {
+                    text2Builder.append(text)
+                }
+
+                "Delete" -> {
+                    text1Builder.append(text)
+                }
+
                 "Equal" -> {
                     text1Builder.append(text)
                     text2Builder.append(text)
@@ -42,11 +48,13 @@ class DiffTests {
                     offset2 += text.length
                     result.add(DiffRange.Insert(r))
                 }
+
                 "Delete" -> {
                     val r = Range.new(StrSliceLike, text1, RangeStartEnd(offset1, offset1 + text.length))
                     offset1 += text.length
                     result.add(DiffRange.Delete(r))
                 }
+
                 "Equal" -> {
                     val r1 = Range.new(StrSliceLike, text1, RangeStartEnd(offset1, offset1 + text.length))
                     val r2 = Range.new(StrSliceLike, text2, RangeStartEnd(offset2, offset2 + text.length))
@@ -74,10 +82,12 @@ class DiffTests {
                     assertEquals(exp.value, act.left.asSlice(), "$msg: at index $i left slice mismatch")
                     assertEquals(exp.value, act.right.asSlice(), "$msg: at index $i right slice mismatch")
                 }
+
                 is Diff.Delete -> {
                     assertTrue(act is DiffRange.Delete, "$msg: at index $i expected Delete but got $act")
                     assertEquals(exp.value, act.range.asSlice(), "$msg: at index $i slice mismatch")
                 }
+
                 is Diff.Insert -> {
                     assertTrue(act is DiffRange.Insert, "$msg: at index $i expected Insert but got $act")
                     assertEquals(exp.value, act.range.asSlice(), "$msg: at index $i slice mismatch")
@@ -216,7 +226,9 @@ class DiffTests {
     fun testDiffSlice() {
         val a = "bat".encodeToByteArray()
         val b = "map".encodeToByteArray()
-        val solution = io.github.kotlinmania.diffy.diff.diff(ByteSliceLike, a, b)
+        val solution =
+            io.github.kotlinmania.diffy.diff
+                .diff(ByteSliceLike, a, b)
         val expected =
             listOf(
                 "Delete" to "b",
