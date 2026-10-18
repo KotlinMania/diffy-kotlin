@@ -41,9 +41,21 @@ license](https://github.com/bmwill/diffy/blob/HEAD/LICENSE-APACHE) or the [MIT l
 
 ```kotlin
 dependencies {
-    implementation("io.github.kotlinmania:diffy-kotlin:0.1.0")
+    implementation("io.github.kotlinmania:diffy-kotlin:0.2.0")
 }
 ```
+
+### Imports
+
+Import types and functions from their defining packages:
+
+```kotlin
+import io.github.kotlinmania.diffy.diff.createPatch
+import io.github.kotlinmania.diffy.patch.Hunk
+import io.github.kotlinmania.diffy.patch.Patch
+```
+
+Version 0.2.0 removes the root-package type aliases and the empty `Lib` object.
 
 ### Building
 
